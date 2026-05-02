@@ -1,0 +1,539 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  ArrowLeft,
+  Users,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Wallet,
+  AlertCircle,
+  Award,
+  TrendingUp,
+  Shield,
+  ChevronRight,
+  Timer,
+  MessageCircle,
+  Flag,
+} from "lucide-react";
+import type { Goal } from "./GoalsScreen";
+import { PaluwagangAdminPanel } from "./PaluwagangAdminPanel";
+import { PaluwagangChatScreen } from "./PaluwagangChatScreen";
+
+interface Props {
+  goal: Goal;
+  onBack: () => void;
+  onPayMonthlyShare: () => void;
+  onUpdate?: (goal: Goal) => void;
+}
+
+export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpdate }: Props) {
+  const currentMonth = new Date().getMonth();
+  const monthlyTarget = goal.monthlyTarget || 0;
+  const members = goal.members || [];
+  const totalMembers = members.length;
+  const isAdmin = goal.adminId === goal.currentUserId;
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+
+  // Find current user
+  const currentUserMember = members.find(m => m.id === goal.currentUserId);
+  const currentUserTrustScore = currentUserMember?.trustScore || 85;
+
+  // Calculate payout date for current user
+  const currentUserPayoutMonth = currentUserMember?.payoutOrder !== undefined
+    ? currentUserMember.payoutOrder
+    : members.findIndex(m => m.id === goal.currentUserId);
+
+  // Calculate days until next payout
+  const today = new Date();
+  const currentDay = today.getDate();
+  const daysInMonth = new Date(today.getFullYear(), currentMonth + 1, 0).getDate();
+  const daysUntilEndOfMonth = daysInMonth - currentDay;
+  const monthsUntilPayout = currentUserPayoutMonth >= currentMonth
+    ? currentUserPayoutMonth - currentMonth
+    : (12 - currentMonth) + currentUserPayoutMonth;
+  const daysUntilPayout = (monthsUntilPayout * 30) + daysUntilEndOfMonth;
+
+  // Get next payout date
+  const nextPayoutDate = new Date();
+  nextPayoutDate.setMonth(currentMonth + monthsUntilPayout);
+  nextPayoutDate.setDate(1);
+
+  // Calculate stats
+  const paidThisMonth = members.filter(
+    (member) => member.monthlyContributions[currentMonth] >= monthlyTarget
+  );
+  const totalCollectedThisMonth = members.reduce(
+    (sum, member) => sum + (member.monthlyContributions[currentMonth] || 0),
+    0
+  );
+
+  // Current receiver (rotation logic)
+  const currentReceiverIndex = currentMonth % totalMembers;
+  const currentReceiver = members.sort((a, b) => (a.payoutOrder || 0) - (b.payoutOrder || 0))[currentReceiverIndex];
+
+  // Payment history for current user
+  const paymentHistory = currentUserMember?.paymentHistory || [];
+  const hasPaidThisMonth = currentUserMember?.monthlyContributions[currentMonth] >= monthlyTarget;
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  // Countdown timer
+  const [timeLeft, setTimeLeft] = useState({
+    days: daysUntilPayout,
+    hours: 0,
+    minutes: 0,
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const diff = nextPayoutDate.getTime() - now.getTime();
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setTimeLeft({ days, hours, minutes });
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, [nextPayoutDate]);
+
+  if (showAdminPanel && isAdmin && onUpdate) {
+    return (
+      <PaluwagangAdminPanel
+        goal={goal}
+        onBack={() => setShowAdminPanel(false)}
+        onUpdate={onUpdate}
+      />
+    );
+  }
+
+  if (showChat) {
+    return (
+      <PaluwagangChatScreen
+        goal={goal}
+        onBack={() => setShowChat(false)}
+        currentUserId={goal.currentUserId || ""}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-[#FAF9F7]">
+      {/* Header */}
+      <div className="bg-[#FAF9F7] px-5 pt-5 pb-4 shrink-0">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onBack}
+          className="flex items-center gap-2 mb-4 text-[#111827] hover:text-[#1565C0] transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
+          <span style={{ fontSize: "0.95rem", fontWeight: 500 }}>Back</span>
+        </motion.button>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[#111827]" style={{ fontSize: "1.1rem", fontWeight: 600 }}>
+              {goal.name}
+            </h1>
+            <p className="text-muted-foreground" style={{ fontSize: "0.8rem" }}>
+              Group savings · {totalMembers} members
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Tertiary: Chat button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowChat(true)}
+              className="w-10 h-10 rounded-full bg-white border border-[rgba(17,24,39,0.1)] flex items-center justify-center shadow-sm hover:border-[#1565C0]/30 transition-colors"
+            >
+              <MessageCircle className="w-5 h-5 text-[#1565C0]" strokeWidth={2} />
+            </motion.button>
+            {/* Primary: Admin button */}
+            {isAdmin && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowAdminPanel(true)}
+                className="px-3 py-2 rounded-full text-white flex items-center gap-2"
+                style={{
+                  backgroundColor: "#1565C0",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  boxShadow: "0 2px 8px rgba(21,101,192,0.25)",
+                }}
+              >
+                <Shield className="w-4 h-4" strokeWidth={2} />
+                Admin
+              </motion.button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto px-6 pb-24 space-y-5">
+        {/* Hero Section - Next Payout (Secondary styling for positive outcome) */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl p-6 text-white relative overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, #4CAF50 0%, #45A049 100%)",
+            boxShadow: "0 6px 20px rgba(76,175,80,0.25)",
+          }}
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full translate-y-8 -translate-x-8" />
+
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-3">
+              <Timer className="w-5 h-5" strokeWidth={2} />
+              <p style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.9 }}>
+                My Next Payout
+              </p>
+            </div>
+
+            <p className="text-white mb-2" style={{ fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>
+              {monthNames[currentUserPayoutMonth]}
+            </p>
+            <p className="text-white/90 mb-4" style={{ fontSize: "0.9rem" }}>
+              You'll receive ₱{(monthlyTarget * totalMembers).toLocaleString()}
+            </p>
+
+            {/* Countdown Timer */}
+            <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
+              <p className="text-white/80 mb-3" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
+                Time Until Payout
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center">
+                  <p className="text-white" style={{ fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>
+                    {timeLeft.days}
+                  </p>
+                  <p className="text-white/70 mt-1" style={{ fontSize: "0.7rem" }}>Days</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-white" style={{ fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>
+                    {timeLeft.hours}
+                  </p>
+                  <p className="text-white/70 mt-1" style={{ fontSize: "0.7rem" }}>Hours</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-white" style={{ fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>
+                    {timeLeft.minutes}
+                  </p>
+                  <p className="text-white/70 mt-1" style={{ fontSize: "0.7rem" }}>Minutes</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Trust Score Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]"
+          style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-[#FFA726]/10 flex items-center justify-center">
+                <Award className="w-6 h-6 text-[#FFA726]" strokeWidth={2} />
+              </div>
+              <div>
+                <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+                  Trust Score
+                </p>
+                <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
+                  Based on payment history
+                </p>
+              </div>
+            </div>
+            <p className="text-[#FFA726]" style={{ fontSize: "2rem", fontWeight: 800, lineHeight: 1 }}>
+              {currentUserTrustScore}%
+            </p>
+          </div>
+          <div className="w-full h-2 bg-[rgba(17,24,39,0.05)] rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${currentUserTrustScore}%` }}
+              transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-[#FFA726] to-[#FFB84D] rounded-full"
+            />
+          </div>
+        </motion.div>
+
+        {/* Current Receiver */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]"
+          style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
+        >
+          <h3 className="text-[#111827] mb-4" style={{ fontSize: "1rem", fontWeight: 600 }}>
+            Current Receiver This Month
+          </h3>
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-[#1565C0]/10 to-[#2d2d9e]/10 border border-[#1565C0]/20">
+            <div className="w-14 h-14 rounded-full bg-[#1565C0] flex items-center justify-center text-white shrink-0" style={{ fontSize: "1.25rem", fontWeight: 700 }}>
+              {currentReceiver?.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+            </div>
+            <div className="flex-1">
+              <p className="text-[#111827] mb-1" style={{ fontSize: "1rem", fontWeight: 700 }}>
+                {currentReceiver?.name}
+              </p>
+              <p className="text-muted-foreground" style={{ fontSize: "0.8rem" }}>
+                Receives ₱{(monthlyTarget * totalMembers).toLocaleString()} this month
+              </p>
+            </div>
+            <div className="px-3 py-1 rounded-full bg-[#1565C0] text-white" style={{ fontSize: "0.7rem", fontWeight: 700 }}>
+              ACTIVE
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Monthly Progress */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]"
+          style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
+        >
+          <h3 className="text-[#111827] mb-4" style={{ fontSize: "1rem", fontWeight: 600 }}>
+            This Month's Progress
+          </h3>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: "0.75rem" }}>
+                Members Paid
+              </p>
+              <p className="text-[#111827]" style={{ fontSize: "1.5rem", fontWeight: 700 }}>
+                {paidThisMonth.length}/{totalMembers}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1" style={{ fontSize: "0.75rem" }}>
+                Total Collected
+              </p>
+              <p className="text-[#4CAF50]" style={{ fontSize: "1.5rem", fontWeight: 700 }}>
+                ₱{totalCollectedThisMonth.toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <div className="w-full h-2 bg-[rgba(17,24,39,0.05)] rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(paidThisMonth.length / totalMembers) * 100}%` }}
+              transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-[#4CAF50] to-[#5cbf6a] rounded-full"
+            />
+          </div>
+        </motion.div>
+
+        {/* Payment History Timeline */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]"
+          style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
+        >
+          <h3 className="text-[#111827] mb-4" style={{ fontSize: "1rem", fontWeight: 600 }}>
+            My Payment History
+          </h3>
+          <div className="space-y-3">
+            {[...Array(Math.min(currentMonth + 1, 5))].map((_, idx) => {
+              const month = currentMonth - idx;
+              const hasPaid = currentUserMember?.monthlyContributions[month] >= monthlyTarget;
+              return (
+                <div key={month} className="flex items-center gap-3 p-3 rounded-xl bg-[#FAF9F7]">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${hasPaid ? "bg-[#4CAF50]/10" : "bg-[rgba(17,24,39,0.05)]"}`}>
+                    {hasPaid ? (
+                      <CheckCircle2 className="w-5 h-5 text-[#4CAF50]" strokeWidth={2} />
+                    ) : (
+                      <Clock className="w-5 h-5 text-[#76777D]" strokeWidth={2} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+                      {monthNames[month]} 2026
+                    </p>
+                    <p className={hasPaid ? "text-[#4CAF50]" : "text-muted-foreground"} style={{ fontSize: "0.75rem" }}>
+                      {hasPaid ? `Paid ₱${monthlyTarget.toLocaleString()}` : "Not paid"}
+                    </p>
+                  </div>
+                  {hasPaid && (
+                    <div className="px-2 py-1 rounded-full bg-[#4CAF50]/10 text-[#4CAF50]" style={{ fontSize: "0.65rem", fontWeight: 700 }}>
+                      ✓ APPROVED
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* Payment CTA */}
+        {!hasPaidThisMonth && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onPayMonthlyShare}
+            className="w-full py-4 rounded-2xl text-white flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: "#1565C0",
+              fontSize: "1rem",
+              fontWeight: 600,
+              boxShadow: "0 6px 20px rgba(21,101,192,0.3)",
+            }}
+          >
+            <Wallet className="w-5 h-5" strokeWidth={2} />
+            Pay Now - ₱{monthlyTarget.toLocaleString()}
+          </motion.button>
+        )}
+
+        {hasPaidThisMonth && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5 }}
+            className="bg-gradient-to-r from-[#4CAF50]/10 to-[#45A049]/10 rounded-2xl p-5 border border-[#4CAF50]/20 text-center"
+          >
+            <CheckCircle2 className="w-12 h-12 text-[#4CAF50] mx-auto mb-3" strokeWidth={2} />
+            <p className="text-[#4CAF50] mb-1" style={{ fontSize: "1.1rem", fontWeight: 700 }}>
+              Payment Complete!
+            </p>
+            <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>
+              You've paid ₱{monthlyTarget.toLocaleString()} for {monthNames[currentMonth]}
+            </p>
+          </motion.div>
+        )}
+
+        {/* Report Button (Members Only) - Tertiary */}
+        {!isAdmin && (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => setShowReportModal(true)}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-white border border-[rgba(17,24,39,0.1)] text-[#F97316] hover:bg-[#FFF7ED] transition-colors"
+            style={{ fontSize: "0.9rem", fontWeight: 600 }}
+          >
+            <Flag className="w-5 h-5" strokeWidth={2} />
+            Report Issue
+          </motion.button>
+        )}
+
+        {/* Info Notice */}
+        <div className="flex items-start gap-3 p-4 bg-[#1565C0]/5 rounded-xl border border-[#1565C0]/10">
+          <AlertCircle className="w-5 h-5 text-[#1565C0] shrink-0 mt-0.5" strokeWidth={2} />
+          <p className="text-[#111827]" style={{ fontSize: "0.8rem", lineHeight: 1.5 }}>
+            Your contributions help everyone in the group. Stay on track to maintain your trust score and ensure smooth payouts!
+          </p>
+        </div>
+      </div>
+
+      {/* Report Issue Modal */}
+      <AnimatePresence>
+        {showReportModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowReportModal(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl p-6 z-50"
+              style={{ maxHeight: "80vh" }}
+            >
+              <div className="w-12 h-1 bg-[rgba(17,24,39,0.2)] rounded-full mx-auto mb-5" />
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-[#F97316]/10 flex items-center justify-center">
+                  <Flag className="w-6 h-6 text-[#F97316]" strokeWidth={2} />
+                </div>
+                <div>
+                  <h2 className="text-[#111827]" style={{ fontSize: "1.2rem", fontWeight: 700 }}>
+                    Report Issue
+                  </h2>
+                  <p className="text-[#45474c]" style={{ fontSize: "0.85rem" }}>
+                    Flag concerns or 'takbo' risk
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-[#45474c] mb-2" style={{ fontSize: "0.85rem", fontWeight: 500 }}>
+                    What's the issue?
+                  </label>
+                  <div className="space-y-2">
+                    {["Member hasn't paid for 2+ months", "Suspicious behavior detected", "Admin not responding", "Other concerns"].map((option) => (
+                      <button
+                        key={option}
+                        onClick={() => setReportReason(option)}
+                        className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${
+                          reportReason === option
+                            ? "border-[#F97316] bg-[#F97316]/5 text-[#F97316]"
+                            : "border-[rgba(17,24,39,0.1)] bg-white text-[#111827] hover:border-[#F97316]/30"
+                        }`}
+                        style={{ fontSize: "0.9rem", fontWeight: 500 }}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                {/* Tertiary: Cancel */}
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportReason("");
+                  }}
+                  className="flex-1 px-6 py-4 rounded-full border border-[rgba(17,24,39,0.1)] bg-white text-[#111827] hover:bg-[#F9F9FA] transition-colors"
+                  style={{ fontSize: "0.95rem", fontWeight: 600 }}
+                >
+                  Cancel
+                </motion.button>
+                {/* Primary: Submit */}
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    if (reportReason) {
+                      alert(`Issue reported: ${reportReason}\n\nThe admin will be notified.`);
+                      setShowReportModal(false);
+                      setReportReason("");
+                    }
+                  }}
+                  disabled={!reportReason}
+                  className="flex-1 px-6 py-4 rounded-2xl bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ fontSize: "0.95rem", fontWeight: 600, boxShadow: !reportReason ? "none" : "0 4px 12px rgba(249,115,22,0.25)" }}
+                >
+                  Submit Report
+                </motion.button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
