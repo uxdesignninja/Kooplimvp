@@ -19,6 +19,7 @@ import {
 import type { Goal } from "./GoalsScreen";
 import { PaluwagangAdminPanel } from "./PaluwagangAdminPanel";
 import { PaluwagangChatScreen } from "./PaluwagangChatScreen";
+import { PaymentGatewayLinkingScreen, type PaymentGatewayInfo } from "./PaymentGatewayLinkingScreen";
 
 interface Props {
   goal: Goal;
@@ -37,6 +38,7 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
   const [showChat, setShowChat] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const [showPaymentGatewayLinking, setShowPaymentGatewayLinking] = useState(false);
 
   // Find current user
   const currentUserMember = members.find(m => m.id === goal.currentUserId);
@@ -101,6 +103,19 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
     return () => clearInterval(timer);
   }, [nextPayoutDate]);
 
+  const handlePaymentGatewayUpdate = (gatewayInfo: PaymentGatewayInfo) => {
+    if (!currentUserMember || !onUpdate) return;
+
+    const updatedMembers = members.map(m =>
+      m.id === currentUserMember.id
+        ? { ...m, paymentGateway: gatewayInfo }
+        : m
+    );
+
+    onUpdate({ ...goal, members: updatedMembers });
+    setShowPaymentGatewayLinking(false);
+  };
+
   if (showAdminPanel && isAdmin && onUpdate) {
     return (
       <PaluwagangAdminPanel
@@ -117,6 +132,16 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
         goal={goal}
         onBack={() => setShowChat(false)}
         currentUserId={goal.currentUserId || ""}
+      />
+    );
+  }
+
+  if (showPaymentGatewayLinking) {
+    return (
+      <PaymentGatewayLinkingScreen
+        onBack={() => setShowPaymentGatewayLinking(false)}
+        onComplete={handlePaymentGatewayUpdate}
+        currentGateway={currentUserMember?.paymentGateway || null}
       />
     );
   }
@@ -194,40 +219,40 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
             <div className="flex items-center gap-2 mb-3">
               <Timer className="w-5 h-5" strokeWidth={2} />
               <p style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.9 }}>
-                My Next Payout
+                My Next Payout · {monthNames[currentUserPayoutMonth]}
               </p>
             </div>
 
-            <p className="text-white mb-2" style={{ fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>
-              {monthNames[currentUserPayoutMonth]}
+            <p className="text-white/80 mb-1" style={{ fontSize: "0.85rem" }}>
+              You'll receive
             </p>
-            <p className="text-white/90 mb-4" style={{ fontSize: "0.9rem" }}>
-              You'll receive ₱{(monthlyTarget * totalMembers).toLocaleString()}
+            <p className="text-white mb-4" style={{ fontSize: "2.5rem", fontWeight: 800, lineHeight: 1, letterSpacing: "-0.02em" }}>
+              ₱{(monthlyTarget * totalMembers).toLocaleString()}
             </p>
 
             {/* Countdown Timer */}
-            <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-              <p className="text-white/80 mb-3" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
+            <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-3">
+              <p className="text-white/70 mb-2" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
                 Time Until Payout
               </p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <div className="text-center">
-                  <p className="text-white" style={{ fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>
+                  <p className="text-white" style={{ fontSize: "1.25rem", fontWeight: 700, lineHeight: 1 }}>
                     {timeLeft.days}
                   </p>
-                  <p className="text-white/70 mt-1" style={{ fontSize: "0.7rem" }}>Days</p>
+                  <p className="text-white/60 mt-0.5" style={{ fontSize: "0.65rem" }}>Days</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-white" style={{ fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>
+                  <p className="text-white" style={{ fontSize: "1.25rem", fontWeight: 700, lineHeight: 1 }}>
                     {timeLeft.hours}
                   </p>
-                  <p className="text-white/70 mt-1" style={{ fontSize: "0.7rem" }}>Hours</p>
+                  <p className="text-white/60 mt-0.5" style={{ fontSize: "0.65rem" }}>Hours</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-white" style={{ fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>
+                  <p className="text-white" style={{ fontSize: "1.25rem", fontWeight: 700, lineHeight: 1 }}>
                     {timeLeft.minutes}
                   </p>
-                  <p className="text-white/70 mt-1" style={{ fontSize: "0.7rem" }}>Minutes</p>
+                  <p className="text-white/60 mt-0.5" style={{ fontSize: "0.65rem" }}>Minutes</p>
                 </div>
               </div>
             </div>
@@ -270,11 +295,113 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
           </div>
         </motion.div>
 
-        {/* Current Receiver */}
+        {/* Payment Gateway Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]"
+          style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-[#1565C0]/10 flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-[#1565C0]" strokeWidth={2} />
+              </div>
+              <div>
+                <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+                  Payment Gateway
+                </p>
+                <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
+                  For receiving payouts
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {currentUserMember?.paymentGateway ? (
+            <>
+              {/* Linked Gateway Info */}
+              <div className="bg-[#4CAF50]/5 rounded-xl p-4 mb-4 border border-[#4CAF50]/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#4CAF50]/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-[#4CAF50]" strokeWidth={2} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[#4CAF50]" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                      {currentUserMember.paymentGateway.type === "gcash" ? "GCash" : "Maya"} Linked
+                    </p>
+                    <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
+                      Ready to receive payouts
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2 pt-3 border-t border-[#4CAF50]/10">
+                  <div className="flex justify-between">
+                    <p className="text-muted-foreground" style={{ fontSize: "0.8rem" }}>
+                      Account Name
+                    </p>
+                    <p className="text-[#111827]" style={{ fontSize: "0.8rem", fontWeight: 600 }}>
+                      {currentUserMember.paymentGateway.accountName}
+                    </p>
+                  </div>
+                  <div className="flex justify-between">
+                    <p className="text-muted-foreground" style={{ fontSize: "0.8rem" }}>
+                      Number
+                    </p>
+                    <p className="text-[#111827]" style={{ fontSize: "0.8rem", fontWeight: 600 }}>
+                      {currentUserMember.paymentGateway.accountNumber}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowPaymentGatewayLinking(true)}
+                className="w-full py-3 rounded-xl text-[#1565C0] bg-[#1565C0]/5 hover:bg-[#1565C0]/10 transition-colors"
+                style={{ fontSize: "0.875rem", fontWeight: 600 }}
+              >
+                Update Gateway
+              </motion.button>
+            </>
+          ) : (
+            <>
+              {/* No Gateway Linked */}
+              <div className="flex items-start gap-3 p-4 bg-[#FFA726]/5 rounded-xl border border-[#FFA726]/20 mb-4">
+                <AlertCircle className="w-5 h-5 text-[#FFA726] shrink-0 mt-0.5" strokeWidth={2} />
+                <div>
+                  <p className="text-[#FFA726] mb-1" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                    No Payment Gateway Linked
+                  </p>
+                  <p className="text-[#111827]" style={{ fontSize: "0.75rem", lineHeight: 1.5 }}>
+                    Link your GCash or Maya account to receive your payout when it's your turn.
+                  </p>
+                </div>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowPaymentGatewayLinking(true)}
+                className="w-full py-3 rounded-xl text-white"
+                style={{
+                  backgroundColor: "#1565C0",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  boxShadow: "0 4px 12px rgba(21,101,192,0.25)",
+                }}
+              >
+                Link Payment Gateway
+              </motion.button>
+            </>
+          )}
+        </motion.div>
+
+        {/* Current Receiver */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
           className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]"
           style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
         >
@@ -303,7 +430,7 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
           className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]"
           style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
         >
@@ -342,7 +469,7 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
           className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]"
           style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
         >
@@ -386,7 +513,7 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.6 }}
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={onPayMonthlyShare}
@@ -407,7 +534,7 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.6 }}
             className="bg-gradient-to-r from-[#4CAF50]/10 to-[#45A049]/10 rounded-2xl p-5 border border-[#4CAF50]/20 text-center"
           >
             <CheckCircle2 className="w-12 h-12 text-[#4CAF50] mx-auto mb-3" strokeWidth={2} />

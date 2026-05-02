@@ -36,6 +36,7 @@ export interface GoalMember {
   penaltyCount?: number; // Number of late payments
   isPending?: boolean; // Payment verification pending
   paymentHistory?: { month: number; amount: number; date: string; status: "approved" | "pending" | "rejected" }[];
+  paymentGateway?: { type: "gcash" | "maya"; accountName: string; accountNumber: string } | null; // Linked payment gateway for receiving payouts
 }
 
 export interface Goal {
@@ -479,19 +480,19 @@ export function GoalsScreen({ goals, activeTab, onTabChange, onAddGoal, onUpdate
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   <div className="bg-white/10 rounded-xl p-3">
                     <p className="text-white/60 mb-1" style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Received</p>
-                    <p style={{ fontSize: '1.2rem', fontWeight: 700, lineHeight: 1 }}>
+                    <p style={{ fontSize: '0.95rem', fontWeight: 700, lineHeight: 1.2 }}>
                       ₱{totalReceived.toLocaleString()}
                     </p>
                   </div>
                   <div className="bg-white/10 rounded-xl p-3">
                     <p className="text-white/60 mb-1" style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contributed</p>
-                    <p style={{ fontSize: '1.2rem', fontWeight: 700, lineHeight: 1 }}>
+                    <p style={{ fontSize: '0.95rem', fontWeight: 700, lineHeight: 1.2 }}>
                       ₱{totalContributed.toLocaleString()}
                     </p>
                   </div>
                   <div className="bg-white/10 rounded-xl p-3">
                     <p className="text-white/60 mb-1" style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Net Gain</p>
-                    <p className={netGain >= 0 ? "text-[#4CAF50]" : "text-[#EF4444]"} style={{ fontSize: '1.2rem', fontWeight: 700, lineHeight: 1 }}>
+                    <p className={netGain >= 0 ? "text-[#4CAF50]" : "text-[#EF4444]"} style={{ fontSize: '0.95rem', fontWeight: 700, lineHeight: 1.2 }}>
                       {netGain >= 0 ? '+' : ''}₱{netGain.toLocaleString()}
                     </p>
                   </div>
@@ -524,11 +525,11 @@ export function GoalsScreen({ goals, activeTab, onTabChange, onAddGoal, onUpdate
                   <div className="pt-4 border-t border-white/10 grid grid-cols-2 gap-3 text-center">
                     <div>
                       <p className="text-white/60" style={{ fontSize: '0.7rem' }}>Personal</p>
-                      <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>₱{personalSaved.toLocaleString()}</p>
+                      <p style={{ fontSize: '0.95rem', fontWeight: 700 }}>₱{personalSaved.toLocaleString()}</p>
                     </div>
                     <div>
                       <p className="text-white/60" style={{ fontSize: '0.7rem' }}>Paluwagan</p>
-                      <p className="text-[#4CAF50]" style={{ fontSize: '1.1rem', fontWeight: 700 }}>₱{totalReceived.toLocaleString()}</p>
+                      <p className="text-[#4CAF50]" style={{ fontSize: '0.95rem', fontWeight: 700 }}>₱{totalReceived.toLocaleString()}</p>
                     </div>
                   </div>
                 ) : (
@@ -549,7 +550,7 @@ export function GoalsScreen({ goals, activeTab, onTabChange, onAddGoal, onUpdate
 
                 <div className="mb-4">
                   <p className="text-white/60 mb-1" style={{ fontSize: '0.75rem' }}>Personal Savings</p>
-                  <p style={{ fontSize: '1.6rem', fontWeight: 700, lineHeight: 1 }}>
+                  <p style={{ fontSize: '1.25rem', fontWeight: 700, lineHeight: 1.2 }}>
                     ₱{personalSaved.toLocaleString()}
                   </p>
                   <p className="text-white/50 mt-0.5" style={{ fontSize: '0.75rem' }}>

@@ -20,9 +20,11 @@ import {
   UserX,
   DollarSign as PenaltyIcon,
   MoreVertical,
+  Sparkles,
 } from "lucide-react";
 import type { Goal, GoalMember } from "./GoalsScreen";
 import { AddMembersScreen } from "./AddMembersScreen";
+import { PayoutProcessingScreen } from "./PayoutProcessingScreen";
 
 interface Props {
   goal: Goal;
@@ -41,10 +43,15 @@ export function PaluwagangAdminPanel({ goal, onBack, onUpdate }: Props) {
   const [showKickConfirm, setShowKickConfirm] = useState<GoalMember | null>(null);
   const [showLateFeeModal, setShowLateFeeModal] = useState<GoalMember | null>(null);
   const [lateFeeAmount, setLateFeeAmount] = useState("");
+  const [showPayoutProcessing, setShowPayoutProcessing] = useState(false);
 
   const members = goal.members || [];
   const currentMonth = new Date().getMonth();
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  // Calculate current receiver
+  const currentReceiverIndex = currentMonth % members.length;
+  const currentReceiver = members.sort((a, b) => (a.payoutOrder || 0) - (b.payoutOrder || 0))[currentReceiverIndex];
 
   // Calculate stats
   const paidThisMonth = members.filter(
@@ -150,6 +157,21 @@ export function PaluwagangAdminPanel({ goal, onBack, onUpdate }: Props) {
     );
   }
 
+  // If showing payout processing screen, render it instead
+  if (showPayoutProcessing && currentReceiver) {
+    return (
+      <PayoutProcessingScreen
+        goal={goal}
+        receiver={currentReceiver}
+        onBack={() => setShowPayoutProcessing(false)}
+        onPayoutComplete={() => {
+          setShowPayoutProcessing(false);
+          // In a real app, you'd update the goal with payout history here
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-[#FAF9F7]">
       {/* Header */}
@@ -213,7 +235,9 @@ export function PaluwagangAdminPanel({ goal, onBack, onUpdate }: Props) {
             onClick={() => setActiveTab(tab.id)}
             className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
               activeTab === tab.id
-                ? "bg-[#1565C0] text-white"
+                ? tab.id === "overview"
+                  ? "bg-[rgba(17,24,39,0.08)] text-[#111827]"
+                  : "bg-[#1565C0] text-white"
                 : "bg-[#FAF9F7] text-[#111827] hover:bg-[rgba(17,24,39,0.04)]"
             }`}
             style={{ fontSize: "0.85rem", fontWeight: 600 }}
@@ -242,28 +266,62 @@ export function PaluwagangAdminPanel({ goal, onBack, onUpdate }: Props) {
             >
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gradient-to-br from-[#4CAF50] to-[#45A049] rounded-2xl p-4 text-white">
-                  <DollarSign className="w-5 h-5 mb-2 opacity-80" strokeWidth={2} />
-                  <p className="opacity-90" style={{ fontSize: "0.75rem", marginBottom: "4px" }}>Collected</p>
-                  <p style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1 }}>
+                <div className="bg-[#4CAF50]/10 rounded-2xl p-4 border border-[#4CAF50]/20">
+                  <DollarSign className="w-5 h-5 mb-2 text-[#4CAF50]" strokeWidth={2} />
+                  <p className="text-[#4CAF50]" style={{ fontSize: "0.75rem", marginBottom: "4px", fontWeight: 600 }}>Collected</p>
+                  <p className="text-[#111827]" style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1 }}>
                     ₱{totalCollected.toLocaleString()}
                   </p>
-                  <p className="opacity-70 mt-1" style={{ fontSize: "0.7rem" }}>
+                  <p className="text-muted-foreground mt-1" style={{ fontSize: "0.7rem" }}>
                     of ₱{expectedTotal.toLocaleString()}
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#1565C0] to-[#1a1a8f] rounded-2xl p-4 text-white">
-                  <Users className="w-5 h-5 mb-2 opacity-80" strokeWidth={2} />
-                  <p className="opacity-90" style={{ fontSize: "0.75rem", marginBottom: "4px" }}>Paid Members</p>
-                  <p style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1 }}>
+                <div className="bg-[#1565C0]/10 rounded-2xl p-4 border border-[#1565C0]/20">
+                  <Users className="w-5 h-5 mb-2 text-[#1565C0]" strokeWidth={2} />
+                  <p className="text-[#1565C0]" style={{ fontSize: "0.75rem", marginBottom: "4px", fontWeight: 600 }}>Paid Members</p>
+                  <p className="text-[#111827]" style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1 }}>
                     {paidThisMonth.length}/{members.length}
                   </p>
-                  <p className="opacity-70 mt-1" style={{ fontSize: "0.7rem" }}>
+                  <p className="text-muted-foreground mt-1" style={{ fontSize: "0.7rem" }}>
                     {monthNames[currentMonth]} 2026
                   </p>
                 </div>
               </div>
+
+              {/* Process Payout CTA */}
+              {currentReceiver && (
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowPayoutProcessing(true)}
+                  className="w-full bg-gradient-to-br from-[#4CAF50] to-[#45A049] rounded-2xl p-5 text-white text-left relative overflow-hidden"
+                  style={{ boxShadow: "0 6px 24px rgba(76,175,80,0.3)" }}
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12" />
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full translate-y-8 -translate-x-8" />
+
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-5 h-5" strokeWidth={2} />
+                        <p style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", opacity: 0.9 }}>
+                          Ready to Pay
+                        </p>
+                      </div>
+                      <p className="mb-1" style={{ fontSize: "1.25rem", fontWeight: 700 }}>
+                        Process Payout
+                      </p>
+                      <p className="text-white/80" style={{ fontSize: "0.8rem" }}>
+                        Send ₱{((goal.monthlyTarget || 0) * members.length).toLocaleString()} to {currentReceiver.name}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ml-4">
+                      <Send className="w-6 h-6" strokeWidth={2} />
+                    </div>
+                  </div>
+                </motion.button>
+              )}
 
               {/* Quick Actions */}
               <div className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]" style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}>
