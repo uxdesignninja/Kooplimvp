@@ -209,7 +209,7 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
       style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))" }}
     >
       {/* Header */}
-      <div className="shrink-0 px-7 pt-6 pb-4">
+      <div className="shrink-0 px-4 sm:px-7 pt-6 pb-4">
         <div className="flex items-center justify-between mb-4">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -253,9 +253,9 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col px-7 pt-6"
+            className="flex-1 flex flex-col px-4 sm:px-7 pt-6 overflow-y-auto pb-32"
           >
-            <div className="flex-1">
+            <div className="flex-1 min-h-0">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -355,7 +355,7 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col px-7 pt-6 overflow-hidden"
+            className="flex-1 flex flex-col px-4 sm:px-7 pt-6 overflow-hidden"
           >
             <div className="flex-1 overflow-y-auto pb-4">
               <div className="mb-6">
@@ -502,7 +502,7 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col px-7 pt-6 overflow-hidden"
+            className="flex-1 flex flex-col px-4 sm:px-7 pt-6 overflow-hidden"
           >
             <div className="flex-1 overflow-y-auto pb-20">
               <div className="mb-6">
@@ -699,7 +699,7 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.35 }}
-            className="flex-1 flex flex-col items-center justify-center px-7"
+            className="flex-1 flex flex-col items-center justify-center px-4 sm:px-7 overflow-y-auto"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -752,7 +752,7 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col px-7 pt-6"
+            className="flex-1 flex flex-col px-4 sm:px-7 pt-6 overflow-y-auto pb-24"
           >
             <div className="flex-1">
               <div className="mb-8">
@@ -878,7 +878,7 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.35 }}
-            className="flex-1 flex flex-col items-center justify-center px-7"
+            className="flex-1 flex flex-col items-center justify-center px-4 sm:px-7 overflow-y-auto"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -952,26 +952,26 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.3 }}
-            className="fixed left-7 right-7 z-50"
+            className="fixed left-4 right-4 sm:left-7 sm:right-7 z-50"
             style={{ bottom: "calc(max(1.5rem, env(safe-area-inset-bottom, 1.5rem)) + 1rem)" }}
           >
             <motion.div
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowPrivacyTooltip(false)}
-              className="relative bg-[#141B2C] rounded-2xl p-4 overflow-hidden cursor-pointer"
+              className="relative bg-[#141B2C] rounded-2xl p-3 sm:p-4 overflow-hidden cursor-pointer max-w-lg mx-auto"
             >
               {/* Decorative glow */}
               <div
-                className="absolute bottom-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10"
+                className="absolute bottom-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 pointer-events-none"
                 style={{ background: "#95F7B9" }}
               />
 
               {/* Close Button */}
-              <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center z-10">
+              <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/10 flex items-center justify-center z-10">
                 <X className="w-4 h-4 text-white" strokeWidth={2} />
               </div>
 
-              <div className="relative flex items-start gap-3 pr-8">
+              <div className="relative flex items-start gap-2 sm:gap-3 pr-8">
                 <div className="w-5 h-5 shrink-0 mt-0.5">
                   <motion.div
                     animate={{ scale: [1, 1.1, 1] }}
@@ -980,11 +980,11 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
                     🔒
                   </motion.div>
                 </div>
-                <div>
-                  <p className="text-[#95F7B9] uppercase tracking-wider mb-1" style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em" }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[#95F7B9] uppercase tracking-wider mb-1" style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em" }}>
                     PRIVACY
                   </p>
-                  <p className="text-white" style={{ fontSize: "0.875rem", lineHeight: 1.5 }}>
+                  <p className="text-white" style={{ fontSize: "0.8rem", lineHeight: 1.4 }}>
                     Your preferences help us personalize your experience. We don't contact or share data with cooperative banks.
                   </p>
                 </div>

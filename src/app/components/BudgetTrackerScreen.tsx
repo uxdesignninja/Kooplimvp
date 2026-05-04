@@ -118,61 +118,6 @@ function CircularProgress({ spent, salary, size = 140 }: { spent: number; salary
   );
 }
 
-// Slider styles for range input
-const sliderStyles = `
-  input[type="range"]::-webkit-slider-thumb {
-    appearance: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #1565C0;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(21, 101, 192, 0.3);
-    transition: transform 0.1s ease;
-  }
-  input[type="range"]::-webkit-slider-thumb:hover {
-    transform: scale(1.1);
-  }
-  input[type="range"]::-webkit-slider-thumb:active {
-    transform: scale(1.05);
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #1565C0;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 8px rgba(21, 101, 192, 0.3);
-    transition: transform 0.1s ease;
-  }
-  input[type="range"]::-moz-range-thumb:hover {
-    transform: scale(1.1);
-  }
-  input[type="range"]::-moz-range-thumb:active {
-    transform: scale(1.05);
-  }
-
-  /* White slider thumb for salary slider */
-  input[type="range"].salary-slider::-webkit-slider-thumb {
-    background: white;
-    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
-  }
-  input[type="range"].salary-slider::-moz-range-thumb {
-    background: white;
-    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
-  }
-
-  /* Green slider thumb for budget expense slider */
-  input[type="range"].expense-slider::-webkit-slider-thumb {
-    background: #4CAF50;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
-  }
-  input[type="range"].expense-slider::-moz-range-thumb {
-    background: #4CAF50;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
-  }
-`;
 
 export function BudgetTrackerScreen({ activeTab, onTabChange, onBack }: Props) {
   const [salary, setSalary] = useState<number | null>(() => {
@@ -324,7 +269,17 @@ export function BudgetTrackerScreen({ activeTab, onTabChange, onBack }: Props) {
         if (menuOpenBudgetId) setMenuOpenBudgetId(null);
       }}
     >
-      <style>{sliderStyles}</style>
+      <style>{`
+        /* Hide number input spinner arrows */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
+      `}</style>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -432,7 +387,7 @@ export function BudgetTrackerScreen({ activeTab, onTabChange, onBack }: Props) {
                 className="overflow-hidden relative z-10"
               >
                 {/* Amount Display */}
-                <div className="text-center mb-4">
+                <div className="text-center mb-6">
                   <motion.p
                     key={salary || 0}
                     initial={{ scale: 1.2, opacity: 0 }}
@@ -445,33 +400,67 @@ export function BudgetTrackerScreen({ activeTab, onTabChange, onBack }: Props) {
                   </motion.p>
                 </div>
 
-                {/* Slider */}
-                <div className="mb-4">
-                  <input
-                    type="range"
-                    min="0"
-                    max="100000"
-                    step="1000"
-                    value={salary || 0}
-                    onChange={(e) => {
-                      setSalary(parseFloat(e.target.value));
-                    }}
-                    className="w-full h-2 rounded-full appearance-none cursor-pointer salary-slider"
-                    style={{
-                      background: `linear-gradient(to right, white 0%, white ${
-                        ((salary || 0) / 100000) * 100
-                      }%, rgba(255,255,255,0.2) ${
-                        ((salary || 0) / 100000) * 100
-                      }%, rgba(255,255,255,0.2) 100%)`,
-                    }}
-                  />
-                  <div className="flex justify-between mt-1.5">
-                    <span className="text-white/60" style={{ fontSize: "0.7rem" }}>
-                      ₱0
-                    </span>
-                    <span className="text-white/60" style={{ fontSize: "0.7rem" }}>
-                      ₱100,000
-                    </span>
+                {/* +/- Controls */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-3">
+                    {/* Minus Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        const newValue = Math.max(0, (salary || 0) - 1);
+                        setSalary(newValue);
+                      }}
+                      className="flex-shrink-0 w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
+                      style={{ minWidth: "56px", minHeight: "56px" }}
+                    >
+                      <Minus className="w-6 h-6 text-white" strokeWidth={2.5} />
+                    </motion.button>
+
+                    {/* Value Input */}
+                    <div className="flex-1 relative">
+                      <input
+                        type="number"
+                        value={salary || 0}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          setSalary(isNaN(value) || value < 0 ? 0 : value);
+                        }}
+                        className="w-full px-4 py-3.5 rounded-xl bg-white/20 text-white text-center backdrop-blur-sm border border-white/30 focus:bg-white/30 focus:border-white/50 outline-none transition-all"
+                        style={{ fontSize: "1.125rem", fontWeight: 600 }}
+                        placeholder="0"
+                      />
+                    </div>
+
+                    {/* Plus Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        const newValue = Math.min(100000, (salary || 0) + 1);
+                        setSalary(newValue);
+                      }}
+                      className="flex-shrink-0 w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
+                      style={{ minWidth: "56px", minHeight: "56px" }}
+                    >
+                      <Plus className="w-6 h-6 text-white" strokeWidth={2.5} />
+                    </motion.button>
+                  </div>
+
+                  {/* Quick Amount Buttons */}
+                  <div className="grid grid-cols-4 gap-2 mt-4">
+                    {[5000, 10000, 20000, 50000].map((amount) => (
+                      <motion.button
+                        key={amount}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSalary(amount)}
+                        className="py-2 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-sm"
+                        style={{ fontSize: "0.75rem", fontWeight: 600 }}
+                      >
+                        ₱{amount.toLocaleString()}
+                      </motion.button>
+                    ))}
                   </div>
                 </div>
 
@@ -972,7 +961,7 @@ export function BudgetTrackerScreen({ activeTab, onTabChange, onBack }: Props) {
                               </p>
 
                               {/* Amount Display */}
-                              <div className="text-center mb-4">
+                              <div className="text-center mb-6">
                                 <motion.p
                                   key={editingBudgetId === budget.id ? sliderAmount : 0}
                                   initial={{ scale: 1.2, opacity: 0 }}
@@ -984,38 +973,76 @@ export function BudgetTrackerScreen({ activeTab, onTabChange, onBack }: Props) {
                                 </motion.p>
                               </div>
 
-                              {/* Slider */}
-                              <div className="mb-4">
-                                <input
-                                  type="range"
-                                  min="0"
-                                  max={salary !== null ? Math.min(salary, 10000) : 1000}
-                                  step="10"
-                                  value={editingBudgetId === budget.id ? sliderAmount : 0}
-                                  onChange={(e) => {
-                                    setEditingBudgetId(budget.id);
-                                    setSliderAmount(parseFloat(e.target.value));
-                                  }}
-                                  className="w-full h-2 rounded-full appearance-none cursor-pointer expense-slider"
-                                  style={{
-                                    background: `linear-gradient(to right, #4CAF50 0%, #4CAF50 ${
-                                      ((editingBudgetId === budget.id ? sliderAmount : 0) /
-                                        (salary !== null ? Math.min(salary, 10000) : 1000)) *
-                                      100
-                                    }%, rgba(17,24,39,0.1) ${
-                                      ((editingBudgetId === budget.id ? sliderAmount : 0) /
-                                        (salary !== null ? Math.min(salary, 10000) : 1000)) *
-                                      100
-                                    }%, rgba(17,24,39,0.1) 100%)`,
-                                  }}
-                                />
-                                <div className="flex justify-between mt-1.5">
-                                  <span className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>
-                                    ₱0
-                                  </span>
-                                  <span className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>
-                                    ₱{salary !== null ? Math.min(salary, 10000).toLocaleString() : "1,000"}
-                                  </span>
+                              {/* +/- Controls */}
+                              <div className="mb-6">
+                                <div className="flex items-center gap-3">
+                                  {/* Minus Button */}
+                                  <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                      const currentAmount = editingBudgetId === budget.id ? sliderAmount : 0;
+                                      const newValue = Math.max(0, currentAmount - 1);
+                                      setEditingBudgetId(budget.id);
+                                      setSliderAmount(newValue);
+                                    }}
+                                    className="flex-shrink-0 w-14 h-14 rounded-full bg-[#4CAF50]/20 hover:bg-[#4CAF50]/30 flex items-center justify-center transition-colors"
+                                    style={{ minWidth: "56px", minHeight: "56px" }}
+                                  >
+                                    <Minus className="w-6 h-6 text-[#4CAF50]" strokeWidth={2.5} />
+                                  </motion.button>
+
+                                  {/* Value Input */}
+                                  <div className="flex-1 relative">
+                                    <input
+                                      type="number"
+                                      value={editingBudgetId === budget.id ? sliderAmount : 0}
+                                      onChange={(e) => {
+                                        const value = parseFloat(e.target.value);
+                                        setEditingBudgetId(budget.id);
+                                        setSliderAmount(isNaN(value) || value < 0 ? 0 : value);
+                                      }}
+                                      className="w-full px-4 py-3.5 rounded-xl bg-[#4CAF50]/10 text-[#111827] text-center border border-[#4CAF50]/20 focus:bg-[#4CAF50]/15 focus:border-[#4CAF50]/40 outline-none transition-all"
+                                      style={{ fontSize: "1.125rem", fontWeight: 600 }}
+                                      placeholder="0"
+                                    />
+                                  </div>
+
+                                  {/* Plus Button */}
+                                  <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                      const currentAmount = editingBudgetId === budget.id ? sliderAmount : 0;
+                                      const maxAmount = salary !== null ? Math.min(salary, 10000) : 10000;
+                                      const newValue = Math.min(maxAmount, currentAmount + 1);
+                                      setEditingBudgetId(budget.id);
+                                      setSliderAmount(newValue);
+                                    }}
+                                    className="flex-shrink-0 w-14 h-14 rounded-full bg-[#4CAF50]/20 hover:bg-[#4CAF50]/30 flex items-center justify-center transition-colors"
+                                    style={{ minWidth: "56px", minHeight: "56px" }}
+                                  >
+                                    <Plus className="w-6 h-6 text-[#4CAF50]" strokeWidth={2.5} />
+                                  </motion.button>
+                                </div>
+
+                                {/* Quick Amount Buttons */}
+                                <div className="grid grid-cols-4 gap-2 mt-4">
+                                  {[50, 100, 500, 1000].map((amount) => (
+                                    <motion.button
+                                      key={amount}
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      onClick={() => {
+                                        setEditingBudgetId(budget.id);
+                                        setSliderAmount(amount);
+                                      }}
+                                      className="py-2 px-2 rounded-lg bg-[#4CAF50]/10 hover:bg-[#4CAF50]/20 text-[#4CAF50] transition-colors"
+                                      style={{ fontSize: "0.75rem", fontWeight: 600 }}
+                                    >
+                                      ₱{amount.toLocaleString()}
+                                    </motion.button>
+                                  ))}
                                 </div>
                               </div>
 
