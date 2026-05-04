@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, Search, X, Check, Building2 } from "lucide-react";
 
@@ -130,6 +130,17 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
   const [coopPath, setCoopPath] = useState<"member" | "discovery" | "skipped">("skipped");
   const [hasPaluwagan, setHasPaluwagan] = useState<boolean | null>(null);
   const [interestedInPaluwagan, setInterestedInPaluwagan] = useState(false);
+  const [showPrivacyTooltip, setShowPrivacyTooltip] = useState(false);
+
+  // Show privacy tooltip when entering question screen
+  useEffect(() => {
+    if (step === "question") {
+      const timer = setTimeout(() => setShowPrivacyTooltip(true), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowPrivacyTooltip(false);
+    }
+  }, [step]);
 
   const filteredBanks = COOP_BANKS.filter(
     (bank) =>
@@ -333,38 +344,6 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
                 </motion.button>
               </div>
             </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="mt-4 relative bg-[#141B2C] rounded-2xl p-4 overflow-hidden"
-            >
-              {/* Decorative glow */}
-              <div
-                className="absolute bottom-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10"
-                style={{ background: "#95F7B9" }}
-              />
-
-              <div className="relative flex items-start gap-3">
-                <div className="w-5 h-5 shrink-0 mt-0.5">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    🔒
-                  </motion.div>
-                </div>
-                <div>
-                  <p className="text-[#95F7B9] uppercase tracking-wider mb-1" style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em" }}>
-                    PRIVACY
-                  </p>
-                  <p className="text-white" style={{ fontSize: "0.875rem", lineHeight: 1.5 }}>
-                    Your preferences help us personalize your experience. We don't contact or share data with cooperative banks.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
           </motion.div>
         )}
 
@@ -872,38 +851,6 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
               </div>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="mt-4 mb-6 relative bg-[#141B2C] rounded-2xl p-4 overflow-hidden"
-            >
-              {/* Decorative glow */}
-              <div
-                className="absolute bottom-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10"
-                style={{ background: "#95F7B9" }}
-              />
-
-              <div className="relative flex items-start gap-3">
-                <div className="w-5 h-5 shrink-0 mt-0.5">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    🔒
-                  </motion.div>
-                </div>
-                <div>
-                  <p className="text-[#95F7B9] uppercase tracking-wider mb-1" style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em" }}>
-                    PRIVACY
-                  </p>
-                  <p className="text-white" style={{ fontSize: "0.875rem", lineHeight: 1.5 }}>
-                    This helps us personalize features for community-based savings.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
             <motion.button
               whileHover={{ scale: hasPaluwagan !== null || interestedInPaluwagan ? 1.02 : 1 }}
               whileTap={{ scale: hasPaluwagan !== null || interestedInPaluwagan ? 0.98 : 1 }}
@@ -991,6 +938,56 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
                 >
                   Skip for now
                 </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Privacy Tooltip - Only shows on question screen */}
+      <AnimatePresence>
+        {showPrivacyTooltip && step === "question" && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+            className="fixed left-7 right-7 z-50"
+            style={{ bottom: "calc(max(1.5rem, env(safe-area-inset-bottom, 1.5rem)) + 1rem)" }}
+          >
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowPrivacyTooltip(false)}
+              className="relative bg-[#141B2C] rounded-2xl p-4 overflow-hidden cursor-pointer"
+            >
+              {/* Decorative glow */}
+              <div
+                className="absolute bottom-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10"
+                style={{ background: "#95F7B9" }}
+              />
+
+              {/* Close Button */}
+              <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center z-10">
+                <X className="w-4 h-4 text-white" strokeWidth={2} />
+              </div>
+
+              <div className="relative flex items-start gap-3 pr-8">
+                <div className="w-5 h-5 shrink-0 mt-0.5">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    🔒
+                  </motion.div>
+                </div>
+                <div>
+                  <p className="text-[#95F7B9] uppercase tracking-wider mb-1" style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em" }}>
+                    PRIVACY
+                  </p>
+                  <p className="text-white" style={{ fontSize: "0.875rem", lineHeight: 1.5 }}>
+                    Your preferences help us personalize your experience. We don't contact or share data with cooperative banks.
+                  </p>
+                </div>
               </div>
             </motion.div>
           </motion.div>
