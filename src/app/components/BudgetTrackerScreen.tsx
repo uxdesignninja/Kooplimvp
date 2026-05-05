@@ -421,10 +421,15 @@ export function BudgetTrackerScreen({ activeTab, onTabChange, onBack }: Props) {
                     <div className="flex-1 relative">
                       <input
                         type="number"
-                        value={salary || 0}
+                        value={salary || ""}
                         onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          setSalary(isNaN(value) || value < 0 ? 0 : value);
+                          const inputValue = e.target.value;
+                          if (inputValue === "" || inputValue === null) {
+                            setSalary(0);
+                          } else {
+                            const value = parseFloat(inputValue);
+                            setSalary(isNaN(value) || value < 0 ? 0 : value);
+                          }
                         }}
                         className="w-full px-4 py-3.5 rounded-xl bg-white/20 text-white text-center backdrop-blur-sm border border-white/30 focus:bg-white/30 focus:border-white/50 outline-none transition-all"
                         style={{ fontSize: "1.125rem", fontWeight: 600 }}
@@ -996,11 +1001,16 @@ export function BudgetTrackerScreen({ activeTab, onTabChange, onBack }: Props) {
                                   <div className="flex-1 relative">
                                     <input
                                       type="number"
-                                      value={editingBudgetId === budget.id ? sliderAmount : 0}
+                                      value={editingBudgetId === budget.id ? (sliderAmount || "") : ""}
                                       onChange={(e) => {
-                                        const value = parseFloat(e.target.value);
+                                        const inputValue = e.target.value;
                                         setEditingBudgetId(budget.id);
-                                        setSliderAmount(isNaN(value) || value < 0 ? 0 : value);
+                                        if (inputValue === "" || inputValue === null) {
+                                          setSliderAmount(0);
+                                        } else {
+                                          const value = parseFloat(inputValue);
+                                          setSliderAmount(isNaN(value) || value < 0 ? 0 : value);
+                                        }
                                       }}
                                       className="w-full px-4 py-3.5 rounded-xl bg-[#4CAF50]/10 text-[#111827] text-center border border-[#4CAF50]/20 focus:bg-[#4CAF50]/15 focus:border-[#4CAF50]/40 outline-none transition-all"
                                       style={{ fontSize: "1.125rem", fontWeight: 600 }}
