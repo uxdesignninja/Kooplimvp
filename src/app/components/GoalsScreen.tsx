@@ -20,6 +20,7 @@ import {
   Calendar,
   AlertCircle,
   ScanLine,
+  Clock,
 } from "lucide-react";
 import { BottomNav, type TabId } from "./BottomNav";
 import { DateRangePicker } from "./DateRangePicker";
@@ -679,6 +680,7 @@ export function GoalsScreen({ goals, activeTab, onTabChange, onAddGoal, onUpdate
               ? (goal.currentAmount / goal.targetAmount) * 100
               : 0;
             const color = goal.color || getGoalColor(index);
+            const isDemo = goal.id.startsWith('demo-');
 
             return (
               <motion.div
@@ -693,6 +695,7 @@ export function GoalsScreen({ goals, activeTab, onTabChange, onAddGoal, onUpdate
                   boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)",
                   border: "1px solid rgba(198, 198, 205, 0.15)",
                   overflow: "visible",
+                  background: "white",
                 }}
               >
                 <div
@@ -717,7 +720,7 @@ export function GoalsScreen({ goals, activeTab, onTabChange, onAddGoal, onUpdate
                         <p className="text-[#111827] mb-1" style={{ fontSize: '1.0625rem', fontWeight: 700, lineHeight: 1.2 }}>
                           {goal.name}
                         </p>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {goal.category === "paluwagan" ? (
                             <div className="flex items-center gap-1 px-2 py-0.5 bg-[#4CAF50]/10 rounded-full">
                               <Users className="w-3 h-3 text-[#4CAF50]" strokeWidth={2} />
@@ -816,11 +819,22 @@ export function GoalsScreen({ goals, activeTab, onTabChange, onAddGoal, onUpdate
                   {goal.category === "paluwagan" && (
                     <div className="px-5 pb-4 pt-2 border-t border-[rgba(17,24,39,0.04)]">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-[#45474c]">
-                          <Users className="w-4 h-4" strokeWidth={2} />
-                          <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
-                            {goal.members?.length || 0} {goal.members?.length === 1 ? 'member' : 'members'}
-                          </span>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5 text-[#45474c]">
+                            <Users className="w-4 h-4" strokeWidth={2} />
+                            <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                              {goal.members?.length || 0} {goal.members?.length === 1 ? 'member' : 'members'}
+                            </span>
+                          </div>
+                          {/* Pending Verification Badge (Admin Only) */}
+                          {goal.adminId === goal.currentUserId && goal.members?.some(m => m.isPending) && (
+                            <div className="flex items-center gap-1 px-2 py-0.5 bg-[#FFA726]/10 rounded-full">
+                              <Clock className="w-3 h-3 text-[#FFA726]" strokeWidth={2} />
+                              <span className="text-[#FFA726]" style={{ fontSize: '0.7rem', fontWeight: 600 }}>
+                                {goal.members.filter(m => m.isPending).length} pending
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-1 text-[#1565C0]">
                           <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>View Details</span>

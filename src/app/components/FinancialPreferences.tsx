@@ -5,6 +5,7 @@ import { ArrowLeft, Search, X, Check, Building2 } from "lucide-react";
 interface Props {
   onComplete: (data: FinancialPreferencesData) => void;
   onBack: () => void;
+  onSkip?: (data: FinancialPreferencesData) => void;
 }
 
 export interface FinancialPreferencesData {
@@ -121,7 +122,7 @@ function StepBar({ current, total }: { current: number; total: number }) {
   );
 }
 
-export function FinancialPreferences({ onComplete, onBack }: Props) {
+export function FinancialPreferences({ onComplete, onBack, onSkip }: Props) {
   const [step, setStep] = useState<"question" | "member" | "discovery" | "acknowledgment" | "paluwagan" | "paluwaganAcknowledgment">("question");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCoopName, setSelectedCoopName] = useState("");
@@ -131,6 +132,7 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
   const [hasPaluwagan, setHasPaluwagan] = useState<boolean | null>(null);
   const [interestedInPaluwagan, setInterestedInPaluwagan] = useState(false);
   const [showPrivacyTooltip, setShowPrivacyTooltip] = useState(false);
+  const [skipAcknowledgment, setSkipAcknowledgment] = useState(false); // Track if user skipped directly to paluwagan
 
   // Show privacy tooltip when entering question screen
   useEffect(() => {
@@ -162,16 +164,19 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
 
   const handleMemberPath = () => {
     setCoopPath("member");
+    setSkipAcknowledgment(false); // User is going through acknowledgment
     setStep("acknowledgment");
   };
 
   const handleDiscoveryPath = () => {
     setCoopPath("discovery");
+    setSkipAcknowledgment(false); // User is going through acknowledgment
     setStep("acknowledgment");
   };
 
   const handleSkipCoop = () => {
     setCoopPath("skipped");
+    setSkipAcknowledgment(true); // Mark that user skipped acknowledgment
     setStep("paluwagan");
   };
 
@@ -220,7 +225,14 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
               } else if (step === "paluwaganAcknowledgment") {
                 setStep("paluwagan");
               } else if (step === "paluwagan") {
-                setStep("acknowledgment");
+                // Go back to the appropriate screen based on which path user took
+                if (coopPath === "member") {
+                  setStep("member");
+                } else if (coopPath === "discovery") {
+                  setStep("discovery");
+                } else {
+                  setStep("question");
+                }
               } else if (step === "acknowledgment") {
                 setStep(coopPath === "member" ? "member" : "discovery");
               } else {
@@ -336,10 +348,10 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
                   }}
                 >
                   <p className="text-[#6B7085]" style={{ fontSize: "1.05rem", fontWeight: 600 }}>
-                    Skip for now
+                    Not right now
                   </p>
                   <p className="text-[#9CA3AF] mt-1" style={{ fontSize: "0.875rem" }}>
-                    Continue without selecting
+                    Just explore the app
                   </p>
                 </motion.button>
               </div>
@@ -462,34 +474,22 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
             </div>
 
             <div className="shrink-0 pt-4 border-t border-[rgba(17,24,39,0.06)] bg-[#FAF9F7]">
-              <div className="flex flex-col gap-4">
-                {/* Primary: Continue */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleMemberPath}
-                  className="w-full py-4 rounded-2xl text-white transition-all flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: "#1565C0",
-                    fontSize: "1.0625rem",
-                    fontWeight: 600,
-                    boxShadow: "0 4px 12px rgba(21,101,192,0.25)",
-                  }}
-                >
-                  Continue
-                  <ArrowLeft className="w-4 h-4 rotate-180" strokeWidth={2} />
-                </motion.button>
-                {/* Tertiary: Text-only Skip */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleSkipCoop}
-                  className="text-[#6B7085] hover:text-[#111827] transition-colors text-center"
-                  style={{ fontSize: "1.0625rem", fontWeight: 600 }}
-                >
-                  Skip for now
-                </motion.button>
-              </div>
+              {/* Primary: Continue */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleMemberPath}
+                className="w-full py-4 rounded-2xl text-white transition-all flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: "#1565C0",
+                  fontSize: "1.0625rem",
+                  fontWeight: 600,
+                  boxShadow: "0 4px 12px rgba(21,101,192,0.25)",
+                }}
+              >
+                Continue
+                <ArrowLeft className="w-4 h-4 rotate-180" strokeWidth={2} />
+              </motion.button>
             </div>
           </motion.div>
         )}
@@ -658,35 +658,23 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
 
             {/* Fixed Bottom Actions */}
             <div className="shrink-0 pt-4 border-t border-[rgba(17,24,39,0.06)] bg-[#FAF9F7]">
-              <div className="flex flex-col gap-4">
-                {/* Primary: Next */}
-                <motion.button
-                  whileHover={{ scale: selectedCoops.length > 0 ? 1.02 : 1 }}
-                  whileTap={{ scale: selectedCoops.length > 0 ? 0.98 : 1 }}
-                  onClick={handleDiscoveryPath}
-                  disabled={selectedCoops.length === 0}
-                  className="w-full py-4 rounded-2xl text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: "#1565C0",
-                    fontSize: "1.0625rem",
-                    fontWeight: 600,
-                    boxShadow: selectedCoops.length > 0 ? "0 4px 12px rgba(21,101,192,0.25)" : "none",
-                  }}
-                >
-                  Next {selectedCoops.length > 0 ? `(${selectedCoops.length})` : ""}
-                  <ArrowLeft className="w-4 h-4 rotate-180" strokeWidth={2} />
-                </motion.button>
-                {/* Tertiary: Text-only Skip */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleSkipCoop}
-                  className="text-[#6B7085] hover:text-[#111827] transition-colors text-center"
-                  style={{ fontSize: "1.0625rem", fontWeight: 600 }}
-                >
-                  Skip for now
-                </motion.button>
-              </div>
+              {/* Primary: Next */}
+              <motion.button
+                whileHover={{ scale: selectedCoops.length > 0 ? 1.02 : 1 }}
+                whileTap={{ scale: selectedCoops.length > 0 ? 0.98 : 1 }}
+                onClick={handleDiscoveryPath}
+                disabled={selectedCoops.length === 0}
+                className="w-full py-4 rounded-2xl text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: "#1565C0",
+                  fontSize: "1.0625rem",
+                  fontWeight: 600,
+                  boxShadow: selectedCoops.length > 0 ? "0 4px 12px rgba(21,101,192,0.25)" : "none",
+                }}
+              >
+                Next {selectedCoops.length > 0 ? `(${selectedCoops.length})` : ""}
+                <ArrowLeft className="w-4 h-4 rotate-180" strokeWidth={2} />
+              </motion.button>
             </div>
           </motion.div>
         )}
@@ -932,7 +920,18 @@ export function FinancialPreferences({ onComplete, onBack }: Props) {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={handleFinalComplete}
+                  onClick={() => {
+                    const data: FinancialPreferencesData = {
+                      coopMember: coopPath === "member",
+                      coopBankName: coopPath === "member" ? selectedCoopName || null : null,
+                      interestedInCoops: coopPath === "discovery",
+                      preferredCoops: coopPath === "discovery" ? selectedCoops : [],
+                      onboardingPath: coopPath,
+                      hasPaluwagan,
+                      interestedInPaluwagan,
+                    };
+                    onSkip ? onSkip(data) : handleFinalComplete();
+                  }}
                   className="text-[#6B7085] hover:text-[#111827] transition-colors text-center"
                   style={{ fontSize: "1.0625rem", fontWeight: 600 }}
                 >

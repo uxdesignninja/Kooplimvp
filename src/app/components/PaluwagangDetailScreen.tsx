@@ -15,11 +15,15 @@ import {
   Timer,
   MessageCircle,
   Flag,
+  HelpCircle,
+  X,
 } from "lucide-react";
 import type { Goal } from "./GoalsScreen";
 import { PaluwagangAdminPanel } from "./PaluwagangAdminPanel";
 import { PaluwagangChatScreen } from "./PaluwagangChatScreen";
 import { PaymentGatewayLinkingScreen, type PaymentGatewayInfo } from "./PaymentGatewayLinkingScreen";
+import { SubmitPaymentProofModal } from "./paluwagan/SubmitPaymentProofModal";
+import { PaymentHistoryEnhanced } from "./paluwagan/PaymentHistoryEnhanced";
 
 interface Props {
   goal: Goal;
@@ -39,6 +43,10 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [showPaymentGatewayLinking, setShowPaymentGatewayLinking] = useState(false);
+  const [showSubmitProofModal, setShowSubmitProofModal] = useState(false);
+  const [selectedProofUrl, setSelectedProofUrl] = useState("");
+  const [showPaymentGatewayTooltip, setShowPaymentGatewayTooltip] = useState(false);
+  const [showAllPaymentHistory, setShowAllPaymentHistory] = useState(false);
 
   // Find current user
   const currentUserMember = members.find(m => m.id === goal.currentUserId);
@@ -114,6 +122,47 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
 
     onUpdate({ ...goal, members: updatedMembers });
     setShowPaymentGatewayLinking(false);
+  };
+
+  const handleSubmitPaymentProof = (proofData: {
+    image: File | null;
+    referenceNumber: string;
+    amount: number;
+    date: string;
+  }) => {
+    if (!currentUserMember || !onUpdate) return;
+
+    // In real implementation, upload to Supabase Storage here
+    // For now, add to payment history as pending
+    const updatedMembers = members.map(m => {
+      if (m.id === currentUserMember.id) {
+        const newHistory = [
+          ...(m.paymentHistory || []),
+          {
+            month: currentMonth,
+            amount: proofData.amount,
+            date: proofData.date,
+            status: "pending" as const,
+            referenceNumber: proofData.referenceNumber,
+            proofImageUrl: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=600&fit=crop",
+          },
+        ];
+
+        return {
+          ...m,
+          isPending: true,
+          paymentHistory: newHistory,
+        };
+      }
+      return m;
+    });
+
+    onUpdate({ ...goal, members: updatedMembers });
+    setShowSubmitProofModal(false);
+  };
+
+  const handleViewProof = (proofUrl: string) => {
+    setSelectedProofUrl(proofUrl);
   };
 
   if (showAdminPanel && isAdmin && onUpdate) {
@@ -304,16 +353,76 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
           style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#1565C0]/10 flex items-center justify-center">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-12 h-12 rounded-xl bg-[#1565C0]/10 flex items-center justify-center shrink-0">
                 <Wallet className="w-6 h-6 text-[#1565C0]" strokeWidth={2} />
               </div>
-              <div>
-                <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
-                  Payment Gateway
-                </p>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+                    Payment Gateway
+                  </p>
+                  <div className="relative">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setShowPaymentGatewayTooltip(!showPaymentGatewayTooltip)}
+                      className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-[#1565C0]/10 transition-colors"
+                      aria-label="Help"
+                    >
+                      <HelpCircle className="w-4 h-4 text-[#1565C0]" strokeWidth={2} />
+                    </motion.button>
+
+                    {/* Tooltip */}
+                    <AnimatePresence>
+                      {showPaymentGatewayTooltip && (
+                        <>
+                          {/* Backdrop to close tooltip */}
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setShowPaymentGatewayTooltip(false)}
+                          />
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="absolute left-0 top-8 z-50 w-72 bg-white rounded-xl shadow-lg border border-[rgba(17,24,39,0.08)] p-4"
+                          >
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="w-8 h-8 rounded-lg bg-[#1565C0]/10 flex items-center justify-center shrink-0">
+                                <Wallet className="w-4 h-4 text-[#1565C0]" strokeWidth={2} />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-[#111827] mb-1" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                                  What is this for?
+                                </p>
+                                <p className="text-[#111827]" style={{ fontSize: "0.75rem", lineHeight: 1.5 }}>
+                                  This is where you'll <strong>receive your payout</strong> when it's your turn in the rotation.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="space-y-2 pt-3 border-t border-[rgba(17,24,39,0.06)]">
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50] mt-1.5 shrink-0" />
+                                <p className="text-[#111827]" style={{ fontSize: "0.75rem", lineHeight: 1.5 }}>
+                                  <strong>For receiving:</strong> Admin sends the pot to your GCash/Maya
+                                </p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#1565C0] mt-1.5 shrink-0" />
+                                <p className="text-[#111827]" style={{ fontSize: "0.75rem", lineHeight: 1.5 }}>
+                                  <strong>For contributing:</strong> You upload payment proof screenshots instead
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
                 <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
-                  For receiving payouts
+                  Where you'll receive your payout
                 </p>
               </div>
             </div>
@@ -332,7 +441,7 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
                       {currentUserMember.paymentGateway.type === "gcash" ? "GCash" : "Maya"} Linked
                     </p>
                     <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
-                      Ready to receive payouts
+                      Ready to receive your payout
                     </p>
                   </div>
                 </div>
@@ -354,6 +463,11 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
                     </p>
                   </div>
                 </div>
+                <div className="mt-3 p-3 bg-[#1565C0]/5 rounded-lg">
+                  <p className="text-[#111827] text-center" style={{ fontSize: "0.7rem", lineHeight: 1.4 }}>
+                    💡 Admin will send your payout here when it's your turn. Monthly contributions use payment proof uploads.
+                  </p>
+                </div>
               </div>
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -374,8 +488,11 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
                   <p className="text-[#FFA726] mb-1" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
                     No Payment Gateway Linked
                   </p>
-                  <p className="text-[#111827]" style={{ fontSize: "0.75rem", lineHeight: 1.5 }}>
+                  <p className="text-[#111827] mb-2" style={{ fontSize: "0.75rem", lineHeight: 1.5 }}>
                     Link your GCash or Maya account to receive your payout when it's your turn.
+                  </p>
+                  <p className="text-muted-foreground" style={{ fontSize: "0.7rem", lineHeight: 1.4 }}>
+                    <strong>Note:</strong> Monthly contributions use payment proof uploads, not this gateway.
                   </p>
                 </div>
               </div>
@@ -465,7 +582,7 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
           </div>
         </motion.div>
 
-        {/* Payment History Timeline */}
+        {/* Payment History Timeline - Enhanced */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -473,42 +590,32 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
           className="bg-white rounded-2xl p-5 border border-[rgba(198,198,205,0.15)]"
           style={{ boxShadow: "0px 4px 20px 0px rgba(20, 27, 44, 0.04)" }}
         >
-          <h3 className="text-[#111827] mb-4" style={{ fontSize: "1rem", fontWeight: 600 }}>
-            My Payment History
-          </h3>
-          <div className="space-y-3">
-            {[...Array(Math.min(currentMonth + 1, 5))].map((_, idx) => {
-              const month = currentMonth - idx;
-              const hasPaid = currentUserMember?.monthlyContributions[month] >= monthlyTarget;
-              return (
-                <div key={month} className="flex items-center gap-3 p-3 rounded-xl bg-[#FAF9F7]">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${hasPaid ? "bg-[#4CAF50]/10" : "bg-[rgba(17,24,39,0.05)]"}`}>
-                    {hasPaid ? (
-                      <CheckCircle2 className="w-5 h-5 text-[#4CAF50]" strokeWidth={2} />
-                    ) : (
-                      <Clock className="w-5 h-5 text-[#76777D]" strokeWidth={2} />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
-                      {monthNames[month]} 2026
-                    </p>
-                    <p className={hasPaid ? "text-[#4CAF50]" : "text-muted-foreground"} style={{ fontSize: "0.75rem" }}>
-                      {hasPaid ? `Paid ₱${monthlyTarget.toLocaleString()}` : "Not paid"}
-                    </p>
-                  </div>
-                  {hasPaid && (
-                    <div className="px-2 py-1 rounded-full bg-[#4CAF50]/10 text-[#4CAF50]" style={{ fontSize: "0.65rem", fontWeight: 700 }}>
-                      ✓ APPROVED
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[#111827]" style={{ fontSize: "1rem", fontWeight: 600 }}>
+              My Payment History
+            </h3>
+            {currentUserMember?.paymentHistory && currentUserMember.paymentHistory.length > 2 && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowAllPaymentHistory(true)}
+                className="text-[#1565C0]"
+                style={{ fontSize: "0.85rem", fontWeight: 600 }}
+              >
+                View All ({currentUserMember.paymentHistory.length})
+              </motion.button>
+            )}
           </div>
+          <PaymentHistoryEnhanced
+            paymentHistory={currentUserMember?.paymentHistory || []}
+            monthNames={monthNames}
+            monthlyTarget={monthlyTarget}
+            onViewProof={handleViewProof}
+            limit={2}
+          />
         </motion.div>
 
-        {/* Payment CTA */}
+        {/* Payment CTA - Submit Payment Proof */}
         {!hasPaidThisMonth && (
           <motion.button
             initial={{ opacity: 0, y: 10 }}
@@ -516,7 +623,7 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
             transition={{ delay: 0.6 }}
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
-            onClick={onPayMonthlyShare}
+            onClick={() => setShowSubmitProofModal(true)}
             className="w-full py-4 rounded-2xl text-white flex items-center justify-center gap-2"
             style={{
               backgroundColor: "#1565C0",
@@ -526,7 +633,7 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
             }}
           >
             <Wallet className="w-5 h-5" strokeWidth={2} />
-            Pay Now - ₱{monthlyTarget.toLocaleString()}
+            Submit Payment Proof
           </motion.button>
         )}
 
@@ -659,6 +766,129 @@ export function PaluwagangDetailScreen({ goal, onBack, onPayMonthlyShare, onUpda
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Submit Payment Proof Modal */}
+      <SubmitPaymentProofModal
+        isOpen={showSubmitProofModal}
+        onClose={() => setShowSubmitProofModal(false)}
+        monthlyTarget={monthlyTarget}
+        monthName={monthNames[currentMonth]}
+        onSubmit={handleSubmitPaymentProof}
+      />
+
+      {/* Proof Image Viewer */}
+      <AnimatePresence>
+        {selectedProofUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            onClick={() => setSelectedProofUrl("")}
+          >
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative z-10 max-w-lg w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={selectedProofUrl}
+                alt="Payment proof"
+                className="w-full rounded-2xl shadow-2xl"
+              />
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSelectedProofUrl("")}
+                className="absolute -top-12 right-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg"
+              >
+                <X className="w-5 h-5 text-[#111827]" strokeWidth={2.5} />
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* View All Payment History Modal */}
+      <AnimatePresence>
+        {showAllPaymentHistory && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end"
+            style={{ background: "rgba(10,10,111,0.4)" }}
+            onClick={() => setShowAllPaymentHistory(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{
+                type: "spring",
+                damping: 28,
+                stiffness: 260,
+              }}
+              className="bg-white rounded-t-3xl w-full max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="shrink-0 p-6 pb-4 border-b border-[rgba(17,24,39,0.06)]">
+                <div className="flex justify-center mb-4">
+                  <div className="w-10 h-1 bg-[rgba(17,24,39,0.15)] rounded-full" />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-[#1565C0]/10 flex items-center justify-center shrink-0">
+                    <Clock className="w-6 h-6 text-[#1565C0]" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[#111827]" style={{ fontSize: "1.125rem", fontWeight: 700 }}>
+                      Payment History
+                    </p>
+                    <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>
+                      {currentUserMember?.paymentHistory?.length || 0} payment{currentUserMember?.paymentHistory?.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "#4CAF50" }}>
+                      Trust Score
+                    </p>
+                    <p style={{ fontSize: "1.25rem", fontWeight: 700, color: "#4CAF50" }}>
+                      {currentUserTrustScore}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Body - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <PaymentHistoryEnhanced
+                  paymentHistory={currentUserMember?.paymentHistory || []}
+                  monthNames={monthNames}
+                  monthlyTarget={monthlyTarget}
+                  onViewProof={handleViewProof}
+                />
+              </div>
+
+              {/* Modal Footer - Close Button */}
+              <div className="shrink-0 p-6 pt-4 border-t border-[rgba(17,24,39,0.06)]">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowAllPaymentHistory(false)}
+                  className="w-full py-3.5 rounded-full bg-white border border-[rgba(17,24,39,0.15)] text-[#111827] hover:bg-[#FAF9F7] transition-colors"
+                  style={{ fontSize: "0.95rem", fontWeight: 600 }}
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

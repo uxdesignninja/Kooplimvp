@@ -25,6 +25,7 @@ import {
 import type { Goal, GoalMember } from "./GoalsScreen";
 import { AddMembersScreen } from "./AddMembersScreen";
 import { PayoutProcessingScreen } from "./PayoutProcessingScreen";
+import { AdminApprovalQueueScreen } from "./paluwagan/AdminApprovalQueueScreen";
 
 interface Props {
   goal: Goal;
@@ -44,6 +45,7 @@ export function PaluwagangAdminPanel({ goal, onBack, onUpdate }: Props) {
   const [showLateFeeModal, setShowLateFeeModal] = useState<GoalMember | null>(null);
   const [lateFeeAmount, setLateFeeAmount] = useState("");
   const [showPayoutProcessing, setShowPayoutProcessing] = useState(false);
+  const [showApprovalQueue, setShowApprovalQueue] = useState(false);
 
   const members = goal.members || [];
   const currentMonth = new Date().getMonth();
@@ -61,26 +63,45 @@ export function PaluwagangAdminPanel({ goal, onBack, onUpdate }: Props) {
   const totalCollected = members.reduce((sum, m) => sum + (m.monthlyContributions[currentMonth] || 0), 0);
   const expectedTotal = members.length * (goal.monthlyTarget || 0);
 
-  const handleApprovePayment = (memberId: string) => {
-    const updatedMembers = members.map((m) =>
-      m.id === memberId ? { ...m, isPending: false } : m
-    );
+  const handleApprovePayment = (memberId: string, month: number) => {
+    const updatedMembers = members.map((m) => {
+      if (m.id === memberId) {
+        const updatedHistory = (m.paymentHistory || []).map(p =>
+          p.month === month ? { ...p, status: "approved" as const, verifiedBy: "Admin" } : p
+        );
+        return {
+          ...m,
+          isPending: false,
+          monthlyContributions: {
+            ...m.monthlyContributions,
+            [month]: goal.monthlyTarget || 0,
+          },
+          paymentHistory: updatedHistory,
+        };
+      }
+      return m;
+    });
     onUpdate({ ...goal, members: updatedMembers });
   };
 
-  const handleRejectPayment = (memberId: string) => {
-    const updatedMembers = members.map((m) =>
-      m.id === memberId
-        ? {
-            ...m,
-            isPending: false,
-            monthlyContributions: {
-              ...m.monthlyContributions,
-              [currentMonth]: 0,
-            },
-          }
-        : m
-    );
+  const handleRejectPayment = (memberId: string, month: number, reason: string) => {
+    const updatedMembers = members.map((m) => {
+      if (m.id === memberId) {
+        const updatedHistory = (m.paymentHistory || []).map(p =>
+          p.month === month ? { ...p, status: "rejected" as const, rejectionReason: reason, verifiedBy: "Admin" } : p
+        );
+        return {
+          ...m,
+          isPending: false,
+          monthlyContributions: {
+            ...m.monthlyContributions,
+            [month]: 0,
+          },
+          paymentHistory: updatedHistory,
+        };
+      }
+      return m;
+    });
     onUpdate({ ...goal, members: updatedMembers });
   };
 
@@ -168,6 +189,18 @@ export function PaluwagangAdminPanel({ goal, onBack, onUpdate }: Props) {
           setShowPayoutProcessing(false);
           // In a real app, you'd update the goal with payout history here
         }}
+      />
+    );
+  }
+
+  // Show full approval queue screen
+  if (showApprovalQueue) {
+    return (
+      <AdminApprovalQueueScreen
+        goal={goal}
+        onBack={() => setShowApprovalQueue(false)}
+        onApprove={handleApprovePayment}
+        onReject={handleRejectPayment}
       />
     );
   }
@@ -452,10 +485,33 @@ export function PaluwagangAdminPanel({ goal, onBack, onUpdate }: Props) {
               exit={{ opacity: 0, x: 20 }}
               className="space-y-4"
             >
+              {/* Quick Access to Full Queue */}
+              {pendingVerification.length > 0 && (
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowApprovalQueue(true)}
+                  className="w-full bg-gradient-to-r from-[#1565C0] to-[#1a1a8f] rounded-2xl p-5 text-white text-left transition-all"
+                  style={{ boxShadow: "0 6px 20px rgba(21,101,192,0.25)" }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p style={{ fontSize: "1rem", fontWeight: 700 }}>
+                        View All Payment Proofs
+                      </p>
+                      <p className="text-white/70 mt-1" style={{ fontSize: "0.85rem" }}>
+                        {pendingVerification.length} proof{pendingVerification.length !== 1 ? 's' : ''} awaiting review
+                      </p>
+                    </div>
+                    <ChevronRight className="w-6 h-6" strokeWidth={2} />
+                  </div>
+                </motion.button>
+              )}
+
               <div className="flex items-center gap-3 p-4 bg-[#FFA726]/10 rounded-xl border border-[#FFA726]/20">
                 <AlertCircle className="w-5 h-5 text-[#FFA726]" strokeWidth={2} />
                 <p className="text-[#111827]" style={{ fontSize: "0.85rem", lineHeight: 1.5 }}>
-                  Review and approve member contributions below
+                  Quick approve/reject below, or tap "View All Payment Proofs" to see full details
                 </p>
               </div>
 
@@ -494,20 +550,20 @@ export function PaluwagangAdminPanel({ goal, onBack, onUpdate }: Props) {
                       </div>
                       <div className="flex gap-3">
                         <button
-                          onClick={() => handleApprovePayment(member.id)}
+                          onClick={() => handleApprovePayment(member.id, currentMonth)}
                           className="flex-1 py-3 rounded-xl bg-[#4CAF50] text-white flex items-center justify-center gap-2 hover:bg-[#45A049] transition-colors"
                           style={{ fontSize: "0.9rem", fontWeight: 600 }}
                         >
                           <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
-                          Approve
+                          Quick Approve
                         </button>
                         <button
-                          onClick={() => handleRejectPayment(member.id)}
-                          className="flex-1 py-3 rounded-xl bg-[#EF4444] text-white flex items-center justify-center gap-2 hover:bg-[#DC2626] transition-colors"
+                          onClick={() => setShowApprovalQueue(true)}
+                          className="flex-1 py-3 rounded-xl border-2 border-[#1565C0] text-[#1565C0] flex items-center justify-center gap-2 hover:bg-[#1565C0]/10 transition-colors"
                           style={{ fontSize: "0.9rem", fontWeight: 600 }}
                         >
-                          <X className="w-4 h-4" strokeWidth={2} />
-                          Reject
+                          View Proof
+                          <ChevronRight className="w-4 h-4" strokeWidth={2} />
                         </button>
                       </div>
                     </motion.div>

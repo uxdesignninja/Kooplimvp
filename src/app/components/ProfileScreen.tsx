@@ -109,6 +109,19 @@ export function ProfileScreen({ activeTab, onTabChange, onLogout, selectedCooper
   const [darkMode, setDarkMode] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["account"])); // Default: Account section open
+
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
+  };
 
   const handleUnlink = (id: string) => {
     setLinkedBanks((prev) => prev.filter((b) => b.id !== id));
@@ -236,173 +249,75 @@ export function ProfileScreen({ activeTab, onTabChange, onLogout, selectedCooper
                 </div>
               </motion.div>
 
-              {/* My Cooperative */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="px-6 mb-5"
-              >
-                {selectedCooperative ? (
-                  // Show selected cooperative from onboarding
-                  <div className="w-full p-4 bg-gradient-to-br from-[#1565C0]/[0.04] to-[#2d2d9e]/[0.04] rounded-2xl border border-[#1565C0]/8">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: getCooperativeInfo(selectedCooperative).color + "14" }}
-                      >
-                        <span style={{ 
-                          color: getCooperativeInfo(selectedCooperative).color, 
-                          fontSize: "0.7rem", 
-                          fontWeight: 700,
-                          letterSpacing: "-0.02em"
-                        }}>
-                          {getCooperativeInfo(selectedCooperative).initials}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[#111827] mb-0.5" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
-                          {selectedCooperative}
-                        </p>
-                        <p className="text-muted-foreground" style={{ fontSize: "0.78rem" }}>
-                          My Cooperative
-                        </p>
-                      </div>
-                      <div className="px-2.5 py-1 rounded-lg bg-[#4CAF50]/10 flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#4CAF50]" />
-                        <span className="text-[#4CAF50]" style={{ fontSize: "0.7rem", fontWeight: 600 }}>
-                          Connected
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  // Show "Join a cooperative" button if skipped
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowJoinModal(true)}
-                    className="w-full p-4 bg-white rounded-2xl border border-dashed border-[rgba(17,24,39,0.12)] transition-transform hover:border-[#1565C0]/20"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
-                        <Building className="w-5 h-5 text-[#6B7085]" strokeWidth={1.5} />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-[#111827] mb-0.5" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
-                          Join a Cooperative
-                        </p>
-                        <p className="text-muted-foreground" style={{ fontSize: "0.78rem" }}>
-                          Connect with your financial community
-                        </p>
-                      </div>
-                      <Plus className="w-5 h-5 text-[#1565C0]" strokeWidth={2} />
-                    </div>
-                  </motion.button>
-                )}
-              </motion.div>
-
-              {/* Linked Cooperative Banks */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12 }}
-                className="px-6 mb-5"
-              >
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setView("linked-banks")}
-                  className="w-full p-4 bg-gradient-to-br from-[#1565C0]/[0.04] to-[#2d2d9e]/[0.04] rounded-2xl border border-[#1565C0]/8 transition-transform"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-[#1565C0]/8 flex items-center justify-center">
-                        <Landmark className="w-4.5 h-4.5 text-[#1565C0]" strokeWidth={1.5} />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
-                          Linked Accounts
-                        </p>
-                        <p className="text-muted-foreground" style={{ fontSize: "0.8rem" }}>
-                          {linkedBanks.length} account{linkedBanks.length !== 1 ? "s" : ""} linked
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-[#B0B3BE]" strokeWidth={1.5} />
-                  </div>
-                  {/* Mini preview of linked banks */}
-                  {linkedBanks.length > 0 && (
-                    <div className="flex gap-2">
-                      {linkedBanks.map((b) => (
-                        <div
-                          key={b.id}
-                          className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-[rgba(17,24,39,0.06)] flex-1 min-w-0"
-                        >
-                          <div
-                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                            style={{ backgroundColor: b.color + "12" }}
-                          >
-                            <span style={{ color: b.color, fontSize: "0.55rem", fontWeight: 700 }}>
-                              {b.shortName}
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[#111827] truncate" style={{ fontSize: "0.72rem", fontWeight: 500 }}>
-                              {b.name}
-                            </p>
-                            <p className="text-muted-foreground" style={{ fontSize: "0.62rem" }}>
-                              {b.accountNumber}
-                            </p>
-                          </div>
-                          {b.isPrimary && (
-                            <Star className="w-3 h-3 text-[#F5A623] shrink-0 ml-auto" strokeWidth={2} fill="#F5A623" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </motion.button>
-              </motion.div>
-
               {/* Account Settings */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="px-6 mb-5"
+                className="px-6 mb-3"
               >
-                <p className="text-muted-foreground mb-2.5 px-1" style={{ fontSize: "0.85rem", fontWeight: 500 }}>
-                  Account
-                </p>
                 <div className="bg-white rounded-2xl border border-[rgba(17,24,39,0.06)] overflow-hidden">
-                  {[
-                    { icon: User, label: "Personal Information", detail: "Name, birthday, address" },
-                    { icon: CreditCard, label: "Payment Methods", detail: "Cards, e-wallets" },
-                    { icon: Smartphone, label: "Linked Devices", detail: "1 device active" },
-                    { icon: FileText, label: "Documents & KYC", detail: "Fully verified" },
-                  ].map((item, i, arr) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.label}
-                        className={`flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors ${
-                          i < arr.length - 1 ? "border-b border-[rgba(17,24,39,0.04)]" : ""
-                        }`}
+                  {/* Section Header - Clickable */}
+                  <button
+                    onClick={() => toggleSection("account")}
+                    className="w-full flex items-center justify-between p-4 hover:bg-[rgba(17,24,39,0.01)] transition-colors bg-[rgba(17,24,39,0.02)]"
+                  >
+                    <div className="flex-1 text-left pl-0">
+                      <p className="text-[#111827]" style={{ fontSize: "0.95rem", fontWeight: 600 }}>
+                        Account
+                      </p>
+                      <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
+                        Personal info, payment gateway
+                      </p>
+                    </div>
+                    <motion.div
+                      animate={{ rotate: expandedSections.has("account") ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="w-5 h-5 text-[#B0B3BE]" strokeWidth={1.5} />
+                    </motion.div>
+                  </button>
+
+                  {/* Section Content - Collapsible */}
+                  <AnimatePresence>
+                    {expandedSections.has("account") && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden border-t border-[rgba(17,24,39,0.04)]"
                       >
-                        <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
-                          <Icon className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 500 }}>
-                            {item.label}
-                          </p>
-                          <p className="text-muted-foreground" style={{ fontSize: "0.8rem" }}>{item.detail}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-[#B0B3BE] shrink-0" strokeWidth={1.5} />
-                      </button>
-                    );
-                  })}
+                        {[
+                          { icon: User, label: "Personal Information", detail: "Name, birthday, address" },
+                          { icon: CreditCard, label: "Linked Payment Gateway", detail: "Gcash, Paymaya" },
+                          { icon: Smartphone, label: "Linked Devices", detail: "1 device active" },
+                          { icon: FileText, label: "Documents & KYC", detail: "Fully verified" },
+                        ].map((item, i, arr) => {
+                          const Icon = item.icon;
+                          return (
+                            <button
+                              key={item.label}
+                              className={`flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors ${
+                                i < arr.length - 1 ? "border-b border-[rgba(17,24,39,0.04)]" : ""
+                              }`}
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
+                                <Icon className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+                                  {item.label}
+                                </p>
+                                <p className="text-muted-foreground" style={{ fontSize: "0.8rem" }}>{item.detail}</p>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-[#B0B3BE] shrink-0" strokeWidth={1.5} />
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
 
@@ -411,50 +326,81 @@ export function ProfileScreen({ activeTab, onTabChange, onLogout, selectedCooper
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="px-6 mb-5"
+                className="px-6 mb-3"
               >
-                <p className="text-muted-foreground mb-2.5 px-1" style={{ fontSize: "0.85rem", fontWeight: 500 }}>
-                  Security
-                </p>
                 <div className="bg-white rounded-2xl border border-[rgba(17,24,39,0.06)] overflow-hidden">
-                  <button className="flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors border-b border-[rgba(17,24,39,0.04)]">
-                    <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
-                      <Lock className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
+                  {/* Section Header - Clickable */}
+                  <button
+                    onClick={() => toggleSection("security")}
+                    className="w-full flex items-center justify-between p-4 hover:bg-[rgba(17,24,39,0.01)] transition-colors bg-[rgba(17,24,39,0.02)]"
+                  >
+                    <div className="flex-1 text-left pl-0">
+                      <p className="text-[#111827]" style={{ fontSize: "0.95rem", fontWeight: 600 }}>
+                        Security
+                      </p>
+                      <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
+                        PIN, biometric, privacy
+                      </p>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>Change PIN</p>
-                      <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>Last changed 30 days ago</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-[#B0B3BE]" strokeWidth={1.5} />
+                    <motion.div
+                      animate={{ rotate: expandedSections.has("security") ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="w-5 h-5 text-[#B0B3BE]" strokeWidth={1.5} />
+                    </motion.div>
                   </button>
-                  <div className="flex items-center gap-3 p-4 border-b border-[rgba(17,24,39,0.04)]">
-                    <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
-                      <Shield className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
-                        Biometric Login
-                      </p>
-                      <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>
-                        Face ID / Fingerprint
-                      </p>
-                    </div>
-                    <Toggle value={biometric} onChange={setBiometric} />
-                  </div>
-                  <button className="flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors">
-                    <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
-                      <Eye className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
-                        Privacy Settings
-                      </p>
-                      <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>
-                        Data sharing & visibility
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-[#B0B3BE]" strokeWidth={1.5} />
-                  </button>
+
+                  {/* Section Content - Collapsible */}
+                  <AnimatePresence>
+                    {expandedSections.has("security") && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden border-t border-[rgba(17,24,39,0.04)]"
+                      >
+                        <button className="flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors border-b border-[rgba(17,24,39,0.04)]">
+                          <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
+                            <Lock className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>Change PIN</p>
+                            <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>Last changed 30 days ago</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-[#B0B3BE]" strokeWidth={1.5} />
+                        </button>
+                        <div className="flex items-center gap-3 p-4 border-b border-[rgba(17,24,39,0.04)]">
+                          <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
+                            <Shield className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
+                              Biometric Login
+                            </p>
+                            <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>
+                              Face ID / Fingerprint
+                            </p>
+                          </div>
+                          <Toggle value={biometric} onChange={setBiometric} />
+                        </div>
+                        <button className="flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors">
+                          <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
+                            <Eye className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
+                              Privacy Settings
+                            </p>
+                            <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>
+                              Data sharing & visibility
+                            </p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-[#B0B3BE]" strokeWidth={1.5} />
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
 
@@ -463,46 +409,77 @@ export function ProfileScreen({ activeTab, onTabChange, onLogout, selectedCooper
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
-                className="px-6 mb-5"
+                className="px-6 mb-3"
               >
-                <p className="text-muted-foreground mb-2.5 px-1" style={{ fontSize: "0.85rem", fontWeight: 500 }}>
-                  Preferences
-                </p>
                 <div className="bg-white rounded-2xl border border-[rgba(17,24,39,0.06)] overflow-hidden">
-                  <div className="flex items-center gap-3 p-4 border-b border-[rgba(17,24,39,0.04)]">
-                    <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
-                      <Bell className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
-                        Notifications
+                  {/* Section Header - Clickable */}
+                  <button
+                    onClick={() => toggleSection("preferences")}
+                    className="w-full flex items-center justify-between p-4 hover:bg-[rgba(17,24,39,0.01)] transition-colors bg-[rgba(17,24,39,0.02)]"
+                  >
+                    <div className="flex-1 text-left pl-0">
+                      <p className="text-[#111827]" style={{ fontSize: "0.95rem", fontWeight: 600 }}>
+                        Preferences
                       </p>
-                      <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>
-                        Push & in-app alerts
+                      <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
+                        Notifications, theme, language
                       </p>
                     </div>
-                    <Toggle value={notifications} onChange={setNotifications} />
-                  </div>
-                  <div className="flex items-center gap-3 p-4 border-b border-[rgba(17,24,39,0.04)]">
-                    <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
-                      <Moon className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>Dark Mode</p>
-                      <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>Coming soon</p>
-                    </div>
-                    <Toggle value={darkMode} onChange={setDarkMode} />
-                  </div>
-                  <button className="flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors">
-                    <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
-                      <Globe className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>Language</p>
-                      <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>English (Philippines)</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-[#B0B3BE]" strokeWidth={1.5} />
+                    <motion.div
+                      animate={{ rotate: expandedSections.has("preferences") ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="w-5 h-5 text-[#B0B3BE]" strokeWidth={1.5} />
+                    </motion.div>
                   </button>
+
+                  {/* Section Content - Collapsible */}
+                  <AnimatePresence>
+                    {expandedSections.has("preferences") && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden border-t border-[rgba(17,24,39,0.04)]"
+                      >
+                        <div className="flex items-center gap-3 p-4 border-b border-[rgba(17,24,39,0.04)]">
+                          <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
+                            <Bell className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
+                              Notifications
+                            </p>
+                            <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>
+                              Push & in-app alerts
+                            </p>
+                          </div>
+                          <Toggle value={notifications} onChange={setNotifications} />
+                        </div>
+                        <div className="flex items-center gap-3 p-4 border-b border-[rgba(17,24,39,0.04)]">
+                          <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
+                            <Moon className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>Dark Mode</p>
+                            <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>Coming soon</p>
+                          </div>
+                          <Toggle value={darkMode} onChange={setDarkMode} />
+                        </div>
+                        <button className="flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors">
+                          <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
+                            <Globe className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>Language</p>
+                            <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>English (Philippines)</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-[#B0B3BE]" strokeWidth={1.5} />
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
 
@@ -513,36 +490,67 @@ export function ProfileScreen({ activeTab, onTabChange, onLogout, selectedCooper
                 transition={{ delay: 0.3 }}
                 className="px-6 mb-5"
               >
-                <p className="text-muted-foreground mb-2.5 px-1" style={{ fontSize: "0.85rem", fontWeight: 500 }}>
-                  Support
-                </p>
                 <div className="bg-white rounded-2xl border border-[rgba(17,24,39,0.06)] overflow-hidden">
-                  {[
-                    { icon: HelpCircle, label: "Help Center", detail: "FAQs & guides" },
-                    { icon: MessageSquare, label: "Contact Us", detail: "Chat with support" },
-                    { icon: FileText, label: "Terms & Privacy", detail: "Legal information" },
-                  ].map((item, i, arr) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.label}
-                        className={`flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors ${
-                          i < arr.length - 1 ? "border-b border-[rgba(17,24,39,0.04)]" : ""
-                        }`}
+                  {/* Section Header - Clickable */}
+                  <button
+                    onClick={() => toggleSection("support")}
+                    className="w-full flex items-center justify-between p-4 hover:bg-[rgba(17,24,39,0.01)] transition-colors bg-[rgba(17,24,39,0.02)]"
+                  >
+                    <div className="flex-1 text-left pl-0">
+                      <p className="text-[#111827]" style={{ fontSize: "0.95rem", fontWeight: 600 }}>
+                        Support
+                      </p>
+                      <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
+                        Help center, contact us
+                      </p>
+                    </div>
+                    <motion.div
+                      animate={{ rotate: expandedSections.has("support") ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="w-5 h-5 text-[#B0B3BE]" strokeWidth={1.5} />
+                    </motion.div>
+                  </button>
+
+                  {/* Section Content - Collapsible */}
+                  <AnimatePresence>
+                    {expandedSections.has("support") && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden border-t border-[rgba(17,24,39,0.04)]"
                       >
-                        <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
-                          <Icon className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
-                            {item.label}
-                          </p>
-                          <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>{item.detail}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-[#B0B3BE]" strokeWidth={1.5} />
-                      </button>
-                    );
-                  })}
+                        {[
+                          { icon: HelpCircle, label: "Help Center", detail: "FAQs & guides" },
+                          { icon: MessageSquare, label: "Contact Us", detail: "Chat with support" },
+                          { icon: FileText, label: "Terms & Privacy", detail: "Legal information" },
+                        ].map((item, i, arr) => {
+                          const Icon = item.icon;
+                          return (
+                            <button
+                              key={item.label}
+                              className={`flex items-center gap-3 w-full p-4 text-left hover:bg-[rgba(17,24,39,0.01)] active:bg-[rgba(17,24,39,0.02)] transition-colors ${
+                                i < arr.length - 1 ? "border-b border-[rgba(17,24,39,0.04)]" : ""
+                              }`}
+                            >
+                              <div className="w-9 h-9 rounded-xl bg-[rgba(17,24,39,0.03)] flex items-center justify-center shrink-0">
+                                <Icon className="w-4 h-4 text-[#111827]" strokeWidth={1.5} />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-[#111827]" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
+                                  {item.label}
+                                </p>
+                                <p className="text-muted-foreground" style={{ fontSize: "0.7rem" }}>{item.detail}</p>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-[#B0B3BE]" strokeWidth={1.5} />
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
 
@@ -703,7 +711,6 @@ export function ProfileScreen({ activeTab, onTabChange, onLogout, selectedCooper
                     className="px-5 py-3 rounded-xl text-white flex items-center gap-2 active:scale-[0.97] transition-transform"
                     style={{
                       backgroundColor: "#1565C0",
-                      boxShadow: "0 4px 12px rgba(21,101,192,0.25)",
                       fontSize: "0.82rem",
                       fontWeight: 600,
                       boxShadow: "0 4px 14px rgba(10,10,111,0.25)",
@@ -1032,7 +1039,6 @@ export function ProfileScreen({ activeTab, onTabChange, onLogout, selectedCooper
                       className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40"
                       style={{
                         backgroundColor: linkAccount ? "#1565C0" : "rgba(17,24,39,0.08)",
-                        boxShadow: linkAccount ? "0 4px 12px rgba(21,101,192,0.25)" : "none",
                         color: linkAccount ? "#fff" : "#B0B3BE",
                         fontSize: "0.9rem",
                         fontWeight: 600,
@@ -1117,7 +1123,6 @@ export function ProfileScreen({ activeTab, onTabChange, onLogout, selectedCooper
                       className="px-8 py-4 rounded-2xl text-white active:scale-[0.98] transition-transform"
                       style={{
                         backgroundColor: "#1565C0",
-                      boxShadow: "0 4px 12px rgba(21,101,192,0.25)",
                         fontSize: "0.9rem",
                         fontWeight: 600,
                         boxShadow: "0 4px 14px rgba(10,10,111,0.25)",

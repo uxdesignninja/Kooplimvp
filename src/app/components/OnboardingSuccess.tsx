@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { BarChart3, Send, Target, CheckCircle2, ArrowRight, Building2, Shield } from "lucide-react";
-import koopliLogo from "../../imports/logo-icon.png";
 import type { FinancialPreferencesData } from "./FinancialPreferences";
 
 interface Props {
@@ -9,6 +8,7 @@ interface Props {
   userName?: string;
   financialPrefs?: FinancialPreferencesData | null;
   learningSkipped?: boolean; // Track if learning was skipped
+  kycSkipped?: boolean; // Track if KYC was skipped
 }
 
 const firstName = (fullName: string) => fullName.split(" ")[0] || "there";
@@ -88,7 +88,7 @@ const features = [
   },
 ];
 
-export function OnboardingSuccess({ onComplete, userName = "", financialPrefs, learningSkipped = false }: Props) {
+export function OnboardingSuccess({ onComplete, userName = "", financialPrefs, learningSkipped = false, kycSkipped = false }: Props) {
   const [phase, setPhase] = useState<"confetti" | "content">("confetti");
 
   useEffect(() => {
@@ -96,9 +96,14 @@ export function OnboardingSuccess({ onComplete, userName = "", financialPrefs, l
     return () => clearTimeout(t);
   }, []);
 
-  // Dynamic account items based on financial preferences and learning status
+  // Dynamic account items based on financial preferences, learning, and KYC status
   const accountItems = [
-    { icon: Shield, label: "Identity Verified", status: "Confirmed", color: "#4CAF50" },
+    {
+      icon: Shield,
+      label: "Identity Verified",
+      status: kycSkipped ? "Pending" : "Confirmed",
+      color: kycSkipped ? "#F59E0B" : "#4CAF50"
+    },
     {
       icon: Building2,
       label: "Coop Preferences",
@@ -124,7 +129,6 @@ export function OnboardingSuccess({ onComplete, userName = "", financialPrefs, l
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
       className="flex flex-col h-full"
-      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}
     >
       {/* Hero section — dark navy */}
       <div
@@ -191,22 +195,19 @@ export function OnboardingSuccess({ onComplete, userName = "", financialPrefs, l
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
           >
-            <p className="text-[#4CAF50] uppercase tracking-widest mb-1" style={{ fontSize: "0.65rem", fontWeight: 600 }}>
-              Setup Complete
-            </p>
             <h1 className="text-white tracking-tight mb-1.5" style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1.15 }}>
               Welcome to Koopli,{" "}
               {userName ? `${firstName(userName)}!` : "welcome!"}
             </h1>
             <p className="text-white/55" style={{ fontSize: "0.85rem", lineHeight: 1.45 }}>
-              Your account is fully set up and ready. Start your financial journey with your community.
+              Your account is ready. Start and grow your financial journey.
             </p>
           </motion.div>
         </div>
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
+      <div className="flex-1 overflow-y-auto px-6 pb-4">
         {/* Account overview card */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -214,22 +215,6 @@ export function OnboardingSuccess({ onComplete, userName = "", financialPrefs, l
           transition={{ delay: 0.65 }}
           className="mt-4 bg-white rounded-2xl border border-[rgba(17,24,39,0.07)] shadow-[0px_8px_32px_rgba(10,10,111,0.1)] p-4"
         >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl overflow-hidden bg-[rgba(10,10,111,0.05)] flex items-center justify-center shrink-0">
-            <img src={koopliLogo} alt="Koopli" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <p className="text-[#111827]" style={{ fontSize: "0.9rem", fontWeight: 700 }}>
-              Account Summary
-            </p>
-            {financialPrefs?.coopBankName && (
-              <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
-                {financialPrefs.coopBankName} Member
-              </p>
-            )}
-          </div>
-        </div>
-
         <div className="space-y-2.5">
           {accountItems.map((item, i) => (
             <motion.div
@@ -269,7 +254,7 @@ export function OnboardingSuccess({ onComplete, userName = "", financialPrefs, l
         <p className="text-muted-foreground uppercase tracking-widest mb-4" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
           What's waiting for you
         </p>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           {features.map((f, i) => (
             <motion.div
               key={i}
@@ -296,30 +281,31 @@ export function OnboardingSuccess({ onComplete, userName = "", financialPrefs, l
           ))}
         </div>
         </motion.div>
+      </div>
 
-        {/* CTA */}
-        <motion.div
+      {/* Fixed Bottom CTA */}
+      <div
+        className="shrink-0 px-6 pt-4 bg-[#FAF9F7] border-t border-[rgba(17,24,39,0.06)]"
+        style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))" }}
+      >
+        <motion.button
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.0 }}
-          className="mt-5"
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onComplete}
+          className="w-full py-4 rounded-2xl text-white flex items-center justify-center gap-2 transition-all"
+          style={{
+            backgroundColor: "#1565C0",
+            fontSize: "1.0625rem",
+            fontWeight: 600,
+            boxShadow: "0 8px 24px rgba(10,10,111,0.25)",
+          }}
         >
-          <motion.button
-            whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onComplete}
-            className="w-full py-4 rounded-2xl text-white flex items-center justify-center gap-2 transition-all"
-            style={{
-              backgroundColor: "#1565C0",
-              fontSize: "1.0625rem",
-              fontWeight: 600,
-              boxShadow: "0 8px 24px rgba(10,10,111,0.25)",
-            }}
-          >
-            Go to Dashboard
-            <ArrowRight className="w-5 h-5" strokeWidth={2} />
-          </motion.button>
-        </motion.div>
+          Go to Dashboard
+          <ArrowRight className="w-5 h-5" strokeWidth={2} />
+        </motion.button>
       </div>
     </motion.div>
   );

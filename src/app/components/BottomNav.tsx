@@ -12,8 +12,8 @@ interface Props {
 const mainTabs: { id: TabId; icon: typeof Home; label: string }[] = [
   { id: "home",    icon: Home,      label: "Home"    },
   { id: "budget",  icon: BarChart3, label: "Budget"  },
-  { id: "payment", icon: Send,      label: "Payment" },
   { id: "goals",   icon: Target,    label: "Goals"   },
+  { id: "payment", icon: Send,      label: "Payment" },
 ];
 
 const moreTabs: { id: TabId; icon: typeof Settings; label: string }[] = [
@@ -88,7 +88,7 @@ export function BottomNav({ activeTab, onTabChange }: Props) {
 
       {/* Bottom Navigation */}
       <div
-        className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-[rgba(17,24,39,0.06)] px-6 pt-3 flex justify-around z-20"
+        className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-[rgba(17,24,39,0.06)] px-3 pt-3 flex justify-between z-20"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0.75rem))" }}
       >
         {mainTabs.map((item) => {
@@ -98,7 +98,7 @@ export function BottomNav({ activeTab, onTabChange }: Props) {
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className="flex flex-col items-center gap-1 px-3 py-1 transition-colors min-w-[44px] min-h-[44px] justify-center"
+              className="flex flex-col items-center gap-1 px-2 py-1 transition-colors min-w-[44px] min-h-[44px] justify-center"
             >
               <Icon
                 className="w-6 h-6"
@@ -121,7 +121,7 @@ export function BottomNav({ activeTab, onTabChange }: Props) {
         {/* More Button */}
         <button
           onClick={() => setShowMoreMenu(!showMoreMenu)}
-          className="flex flex-col items-center gap-1 px-3 py-1 transition-colors min-w-[44px] min-h-[44px] justify-center"
+          className="flex flex-col items-center gap-1 px-2 py-1 transition-colors min-w-[44px] min-h-[44px] justify-center"
         >
           <MoreHorizontal
             className="w-6 h-6"
