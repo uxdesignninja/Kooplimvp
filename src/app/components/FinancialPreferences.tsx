@@ -334,26 +334,6 @@ export function FinancialPreferences({ onComplete, onBack, onSkip }: Props) {
                     Discover cooperative banking
                   </p>
                 </motion.button>
-
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ delay: 0.3 }}
-                  onClick={handleSkipCoop}
-                  className="w-full py-4 px-5 rounded-2xl bg-white border border-[rgba(17,24,39,0.08)] text-left transition-all hover:border-[rgba(17,24,39,0.15)] hover:bg-[#F9F9FA]"
-                  style={{
-                    boxShadow: "0 2px 8px rgba(20,27,44,0.04)",
-                  }}
-                >
-                  <p className="text-[#6B7085]" style={{ fontSize: "1.05rem", fontWeight: 600 }}>
-                    Not right now
-                  </p>
-                  <p className="text-[#9CA3AF] mt-1" style={{ fontSize: "0.875rem" }}>
-                    Just explore the app
-                  </p>
-                </motion.button>
               </div>
             </div>
           </motion.div>
